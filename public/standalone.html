@@ -8,16 +8,210 @@
   <title>NeonSpace · Network Observatory</title>
   <style>
     :root{color-scheme:dark;--bg:#07070d;--panel:#101019;--panel2:#0c0c14;--border:#282637;--text:#eeeaf4;--muted:#8c899d;--pink:#ff58cf;--cyan:#68e8ff;--green:#39ff88;--amber:#ffc857;--red:#ff526d;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
-    *{box-sizing:border-box}body{margin:0;min-width:320px;min-height:100vh;background:radial-gradient(ellipse at 50% -15%,#211128 0,transparent 45%),var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}button,input{font:inherit}button{color:inherit}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.app{max-width:1680px;margin:auto;padding:0 32px 28px}.topbar{height:72px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #292634}.brand{display:flex;align-items:center;gap:12px}.brand-mark{width:38px;height:38px;display:grid;place-items:center;border:1px solid #ff58cf55;border-radius:12px;color:var(--pink);background:#ff58cf12;box-shadow:0 0 24px #ff58cf20}.brand-name{font-size:14px;font-weight:700;letter-spacing:.04em}.brand-name span{color:var(--pink)}.brand-sub{margin-top:3px;color:var(--muted);font-size:9px;letter-spacing:.22em}.summary{display:flex;gap:13px;align-items:center;border:1px solid var(--border);border-radius:99px;padding:8px 12px;background:#11111bbd;font-size:9px;letter-spacing:.08em}.summary span{white-space:nowrap}.healthy{color:var(--green)}.degraded{color:var(--amber)}.offline{color:var(--red)}.grid-id{color:var(--muted);font-size:10px;letter-spacing:.1em}.intro{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;padding:32px 0 22px}.eyebrow{display:flex;align-items:center;gap:9px;color:var(--pink);font-size:10px;letter-spacing:.2em;text-transform:uppercase}.eyebrow:before{content:"";width:24px;height:1px;background:var(--pink)}h1{margin:10px 0 8px;font-size:clamp(28px,4vw,42px);font-weight:500;letter-spacing:-.04em}.subcopy{margin:0;color:var(--muted);font-size:13px}.metrics{display:grid;grid-template-columns:repeat(3,minmax(112px,1fr));gap:9px}.metric{min-width:112px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#11111ab8}.metric-label{color:var(--muted);font-size:9px;letter-spacing:.15em}.metric-value{margin-top:5px;font-family:ui-monospace,monospace;font-size:20px}.metric-value small{font-size:9px;color:var(--muted)}.metric-detail{margin-top:2px;color:var(--muted);font-size:10px}.workspace{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:15px;align-items:stretch}.field{position:relative;min-height:650px;overflow:hidden;border:1px solid #302a3e;border-radius:18px;background:radial-gradient(ellipse at 53% 48%,#180d22 0,transparent 61%),#030409;box-shadow:inset 0 0 80px #17102266}.field:before{position:absolute;inset:0;content:"";opacity:.12;background-image:linear-gradient(#8178a522 1px,transparent 1px),linear-gradient(90deg,#8178a522 1px,transparent 1px);background-size:48px 48px;pointer-events:none}.planet{position:absolute;z-index:0;border-radius:50%;opacity:.7;pointer-events:none;box-shadow:inset -10px -8px 16px #060711aa,0 0 22px currentColor}.planet:after{position:absolute;inset:-22% -52%;content:"";border:1px solid currentColor;border-radius:50%;transform:rotate(-22deg);opacity:.58}.planet.one{width:38px;height:38px;left:30%;top:18%;color:#b86ee8;background:radial-gradient(circle at 30% 25%,#f8d8ff,#ad58d8 40%,#37204f 78%)}.planet.two{width:28px;height:28px;right:15%;top:31%;color:#54d6d5;background:radial-gradient(circle at 30% 25%,#deffff,#39babc 42%,#153b52 80%)}.planet.three{width:30px;height:30px;left:12%;bottom:19%;color:#ec876f;background:radial-gradient(circle at 30% 25%,#fff0d9,#db775a 42%,#512b37 80%)}.planet.four{width:24px;height:24px;right:22%;bottom:17%;color:#86a6ff;background:radial-gradient(circle at 30% 25%,#e7f0ff,#6889ec 42%,#26315e 80%)}canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;z-index:1}.field-hud{position:absolute;z-index:3;top:15px;left:16px;padding:7px 9px;border:1px solid #353044;border-radius:6px;background:#090910be;color:#aaa6b7;font-size:9px;letter-spacing:.1em;pointer-events:none}.field-controls{position:absolute;z-index:3;top:15px;right:16px;display:flex;align-items:center;gap:12px}.speed-control{display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid #353044;border-radius:6px;background:#090910d9;color:#a7a2b5;font-size:9px}.speed-control strong{color:var(--text);font-weight:500}.speed-control input{width:76px;accent-color:var(--pink)}.sample-tag{color:#ffe8a8;font-size:9px;letter-spacing:.1em}.legend{position:absolute;z-index:3;left:17px;bottom:15px;display:flex;flex-wrap:wrap;gap:12px;color:#aaa6b7;font-size:9px;pointer-events:none}.legend span{display:flex;align-items:center;gap:6px}.legend i{width:6px;height:6px;border-radius:50%;box-shadow:0 0 7px currentColor}.labels{position:absolute;inset:0;z-index:2;pointer-events:none}.node-label{position:absolute;max-width:185px;overflow:hidden;padding:2px 5px;transform:translate(-50%,9px);border:1px solid transparent;border-radius:3px;background:#07070dcc;color:#c2c0ce;font:8px ui-monospace,monospace;white-space:nowrap;text-overflow:ellipsis}.node-label.selected{border-color:#ff58cf55;color:#fff0fb;box-shadow:0 0 10px #ff58cf22}.inspector{min-height:650px;overflow:hidden;border:1px solid var(--border);border-radius:18px;background:linear-gradient(155deg,#14131d,#0e0e16 68%)}.inspector-head{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid var(--border);color:#a6a1b2;font-size:9px;letter-spacing:.15em}.close{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:5px}.close:hover{color:var(--text)}.inspector-body{padding:19px}.endpoint{display:flex;align-items:flex-start;gap:12px}.device-icon{width:42px;height:42px;display:grid;place-items:center;flex:0 0 auto;border:1px solid #ff58cf55;border-radius:12px;color:var(--pink);background:#ff58cf13;font-size:18px}.endpoint h2{margin:1px 0 5px;font-size:15px;font-weight:550;line-height:1.35;overflow-wrap:anywhere}.endpoint p{margin:0;color:var(--muted);font-size:9px;letter-spacing:.08em}.status-row,.link-row{display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding:10px 11px;border:1px solid;border-radius:8px;font-size:9px;letter-spacing:.08em}.status-row.healthy,.link-row.healthy{border-color:#39ff8845;background:#39ff880d}.status-row.degraded,.link-row.degraded{border-color:#ffc85745;background:#ffc8570d}.status-row.offline,.link-row.offline{border-color:#ff526d45;background:#ff526d0d}.status-row span:first-child,.link-row span:first-child{color:var(--muted)}.telemetry{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:18px}.telemetry-card{min-width:0;padding:11px;border:1px solid #292735;border-radius:8px;background:#08081099}.telemetry-label{color:var(--muted);font-size:8px;letter-spacing:.12em}.telemetry-value{margin-top:8px;overflow-wrap:anywhere;font:12px ui-monospace,monospace}.stream-title{display:flex;justify-content:space-between;margin:20px 0 9px;color:var(--muted);font-size:9px;letter-spacing:.13em}.stream-title b{padding:3px 6px;border:1px solid #ffc85735;border-radius:4px;color:#ffe8a8;font-size:8px;font-weight:400}.logs{overflow:hidden;border:1px solid #292735;border-radius:8px;background:#08081099}.log{display:grid;grid-template-columns:32px 33px 1fr;gap:8px;padding:10px;font-size:9px;line-height:1.5}.log+.log{border-top:1px solid #29273588}.log time{color:var(--muted);font:8px ui-monospace,monospace}.log b{color:var(--green);font:8px ui-monospace,monospace}.log b.warn{color:var(--amber)}.inspector-foot{padding:11px 18px;border-top:1px solid var(--border);color:var(--muted);font:8px ui-monospace,monospace;letter-spacing:.12em}.stations{margin-top:17px}.station-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px}.station-head h2{margin:5px 0 0;font-size:14px;font-weight:550}.station-head p{margin:0;color:var(--pink);font:9px ui-monospace,monospace;letter-spacing:.13em}.station-head small{color:var(--muted);font:8px ui-monospace,monospace;letter-spacing:.1em}.station-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.station{display:flex;align-items:center;gap:12px;min-height:100px;padding:13px;border:1px solid var(--border);border-radius:12px;background:#11111a99;text-align:left;cursor:pointer;transition:border-color .2s,background .2s,transform .2s}.station:hover{border-color:#ff58cf66;background:#171520;transform:translateY(-2px)}.ship{width:70px;height:54px;flex:0 0 auto;display:grid;place-items:center;border:1px solid #302b3c;border-radius:8px;background:#080810;color:var(--pink);font-size:22px}.station:nth-child(2) .ship{color:var(--cyan)}.station:nth-child(3) .ship{color:var(--amber)}.station-copy{min-width:0}.station-code{color:#c985ef;font:8px ui-monospace,monospace;letter-spacing:.1em}.station-title{display:block;margin:4px 0;font-size:12px;font-weight:550}.station-desc{display:block;color:var(--muted);font-size:9px;line-height:1.4}.station-action{display:inline-block;margin-top:7px;color:#aaa6b7;font:8px ui-monospace,monospace;letter-spacing:.08em}.footer{display:flex;justify-content:space-between;gap:10px;margin-top:14px;color:var(--muted);font:9px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase}.toast{position:fixed;right:20px;bottom:20px;z-index:5;max-width:min(420px,calc(100vw - 40px));padding:11px 15px;border:1px solid #39ff8845;border-radius:9px;background:#101019;color:var(--text);font-size:12px;box-shadow:0 10px 36px #0008;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none}.toast.show{opacity:1;transform:translateY(0)}.webgl-error{position:absolute;z-index:4;inset:50% auto auto 50%;width:min(80%,420px);transform:translate(-50%,-50%);color:#ffb4c0;text-align:center;font-size:13px;line-height:1.6}.empty{display:grid;min-height:570px;place-content:center;padding:28px;text-align:center;color:var(--muted)}.empty strong{color:var(--text);font-size:13px;font-weight:500}.empty p{max-width:220px;font-size:11px;line-height:1.6}
-    @media(max-width:1050px){.workspace{grid-template-columns:minmax(0,1fr) 310px}.app{padding-inline:22px}.intro{align-items:flex-start;flex-direction:column}.metrics{width:100%}.metric{flex:1}}
-    @media(max-width:760px){.app{padding-inline:14px}.topbar{height:64px}.summary{display:none}.grid-id{font-size:9px}.intro{padding:24px 0 18px}.workspace{grid-template-columns:1fr}.field{min-height:550px}.inspector{min-height:0}.inspector-body{padding:16px}.station-grid{grid-template-columns:1fr}.station{min-height:90px}.footer{font-size:8px}.metric{min-width:0;padding:10px}.metric-value{font-size:17px}.metric-detail{display:none}}
-    @media(max-width:430px){.brand-sub{font-size:8px}.grid-id{letter-spacing:.02em}.field{min-height:515px}.field-hud{top:12px;left:10px;font-size:8px}.field-controls{top:12px;right:10px;gap:5px}.speed-control{gap:5px;padding:6px;font-size:8px}.speed-control input{width:55px}.sample-tag{font-size:8px}.node-label{max-width:125px;font-size:7px}.legend{left:10px;bottom:12px;gap:8px;font-size:8px}}
-    @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
+    *{box-sizing:border-box}body{margin:0;min-width:320px;min-height:100vh;background:radial-gradient(ellipse at 50% -15%,#211128 0,transparent 45%),var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}button,input{font:inherit}button{color:inherit}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.app{max-width:1680px;margin:auto;padding:0 32px 28px}.topbar{height:72px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #292634}.brand{display:flex;align-items:center;gap:12px}.brand-mark{width:38px;height:38px;display:grid;place-items:center;border:1px solid #ff58cf55;border-radius:12px;color:var(--pink);background:#ff58cf12;box-shadow:0 0 24px #ff58cf20}.brand-name{font-size:14px;font-weight:700;letter-spacing:.04em}.brand-name span{color:var(--pink)}.brand-sub{margin-top:3px;color:var(--muted);font-size:9px;letter-spacing:.22em}.summary{display:flex;gap:13px;align-items:center;border:1px solid var(--border);border-radius:99px;padding:8px 12px;background:#11111bbd;font-size:9px;letter-spacing:.08em}.summary span{white-space:nowrap}.healthy{color:var(--green)}.degraded{color:var(--amber)}.offline{color:var(--red)}.grid-id{color:var(--muted);font-size:10px;letter-spacing:.1em}.intro{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;padding:32px 0 22px}.eyebrow{display:flex;align-items:center;gap:9px;color:var(--pink);font-size:10px;letter-spacing:.2em;text-transform:uppercase}.eyebrow:before{content:"";width:24px;height:1px;background:var(--pink)}h1{margin:10px 0 8px;font-size:clamp(28px,4vw,42px);font-weight:500;letter-spacing:-.04em}.subcopy{margin:0;color:var(--muted);font-size:13px}.metrics{display:grid;grid-template-columns:repeat(3,minmax(112px,1fr));gap:9px}.metric{min-width:112px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#11111ab8}.metric-label{color:var(--muted);font-size:9px;letter-spacing:.15em}.metric-value{margin-top:5px;font-family:ui-monospace,monospace;font-size:20px}.metric-value small{font-size:9px;color:var(--muted)}.metric-detail{margin-top:2px;color:var(--muted);font-size:10px}.workspace{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:15px;align-items:stretch}.field{position:relative;min-height:650px;overflow:hidden;border:1px solid #302a3e;border-radius:18px;background:radial-gradient(ellipse at 53% 48%,#180d22 0,transparent 61%),#030409;box-shadow:inset 0 0 80px #17102266}.field:before{position:absolute;inset:0;content:"";opacity:.12;background-image:linear-gradient(#8178a522 1px,transparent 1px),linear-gradient(90deg,#8178a522 1px,transparent 1px);background-size:48px 48px;pointer-events:none}.planet{position:absolute;z-index:0;border-radius:50%;opacity:.7;pointer-events:none;box-shadow:inset -10px -8px 16px #060711aa,0 0 22px currentColor}.planet:after{position:absolute;inset:-22% -52%;content:"";border:1px solid currentColor;border-radius:50%;transform:rotate(-22deg);opacity:.58}.planet.one{width:38px;height:38px;left:30%;top:18%;color:#b86ee8;background:radial-gradient(circle at 30% 25%,#f8d8ff,#ad58d8 40%,#37204f 78%)}.planet.two{width:28px;height:28px;right:15%;top:31%;color:#54d6d5;background:radial-gradient(circle at 30% 25%,#deffff,#39babc 42%,#153b52 80%)}.planet.three{width:30px;height:30px;left:12%;bottom:19%;color:#ec876f;background:radial-gradient(circle at 30% 25%,#fff0d9,#db775a 42%,#512b37 80%)}.planet.four{width:24px;height:24px;right:22%;bottom:17%;color:#86a6ff;background:radial-gradient(circle at 30% 25%,#e7f0ff,#6889ec 42%,#26315e 80%)}canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;z-index:1}.field-hud{position:absolute;z-index:3;top:15px;left:16px;padding:7px 9px;border:1px solid #353044;border-radius:6px;background:#090910be;color:#aaa6b7;font-size:9px;letter-spacing:.1em;pointer-events:none}.field-controls{position:absolute;z-index:3;top:15px;right:16px;display:flex;align-items:center;gap:12px}.speed-control{display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid #353044;border-radius:6px;background:#090910d9;color:#a7a2b5;font-size:9px}.speed-control strong{color:var(--text);font-weight:500}.speed-control input{width:76px;accent-color:var(--pink)}.sample-tag{color:#ffe8a8;font-size:9px;letter-spacing:.1em}.legend{position:absolute;z-index:3;left:17px;bottom:15px;display:flex;flex-wrap:wrap;gap:12px;color:#aaa6b7;font-size:9px;pointer-events:none}.legend span{display:flex;align-items:center;gap:6px}.legend i{width:6px;height:6px;border-radius:50%;box-shadow:0 0 7px currentColor}.labels{position:absolute;inset:0;z-index:2;pointer-events:none}.node-label{position:absolute;max-width:185px;overflow:hidden;padding:2px 5px;transform:translate(-50%,9px);border:1px solid transparent;border-radius:3px;background:#07070dcc;color:#c2c0ce;font:8px ui-monospace,monospace;white-space:nowrap;text-overflow:ellipsis}.node-label.selected{border-color:#ff58cf55;color:#fff0fb;box-shadow:0 0 10px #ff58cf22}.inspector{min-height:650px;overflow:hidden;border:1px solid var(--border);border-radius:18px;background:linear-gradient(155deg,#14131d,#0e0e16 68%)}.inspector-head{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid var(--border);color:#a6a1b2;font-size:9px;letter-spacing:.15em}.close{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:5px}.close:hover{color:var(--text)}.inspector-body{padding:19px}.endpoint{display:flex;align-items:flex-start;gap:12px}.device-icon{width:42px;height:42px;display:grid;place-items:center;flex:0 0 auto;border:1px solid #ff58cf55;border-radius:12px;color:var(--pink);background:#ff58cf13;font-size:18px}.endpoint h2{margin:1px 0 5px;font-size:15px;font-weight:550;line-height:1.35;overflow-wrap:anywhere}.endpoint p{margin:0;color:var(--muted);font-size:9px;letter-spacing:.08em}.status-row,.link-row{display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding:10px 11px;border:1px solid;border-radius:8px;font-size:9px;letter-spacing:.08em}.status-row.healthy,.link-row.healthy{border-color:#39ff8845;background:#39ff880d}.status-row.degraded,.link-row.degraded{border-color:#ffc85745;background:#ffc8570d}.status-row.offline,.link-row.offline{border-color:#ff526d45;background:#ff526d0d}.status-row span:first-child,.link-row span:first-child{color:var(--muted)}.telemetry{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:18px}.telemetry-card{min-width:0;padding:11px;border:1px solid #292735;border-radius:8px;background:#08081099}.telemetry-label{color:var(--muted);font-size:8px;letter-spacing:.12em}.telemetry-value{margin-top:8px;overflow-wrap:anywhere;font:12px ui-monospace,monospace}.stream-title{display:flex;justify-content:space-between;margin:20px 0 9px;color:var(--muted);font-size:9px;letter-spacing:.13em}.stream-title b{padding:3px 6px;border:1px solid #ffc85735;border-radius:4px;color:#ffe8a8;font-size:8px;font-weight:400}.logs{overflow:hidden;border:1px solid #292735;border-radius:8px;background:#08081099}.log{display:grid;grid-template-columns:32px 33px 1fr;gap:8px;padding:10px;font-size:9px;line-height:1.5}.log+.log{border-top:1px solid #29273588}.log time{color:var(--muted);font:8px ui-monospace,monospace}.log b{color:var(--green);font:8px ui-monospace,monospace}.log b.warn{color:var(--amber)}.inspector-foot{padding:11px 18px;border-top:1px solid var(--border);color:var(--muted);font:8px ui-monospace,monospace;letter-spacing:.12em}.stations{margin-top:17px}.station-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px}.station-head h2{margin:5px 0 0;font-size:14px;font-weight:550}.station-head p{margin:0;color:var(--pink);font:9px ui-monospace,monospace;letter-spacing:.13em}.station-head small{color:var(--muted);font:8px ui-monospace,monospace;letter-spacing:.1em}.station-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.station{display:flex;align-items:center;gap:12px;min-height:100px;padding:13px;border:1px solid var(--border);border-radius:12px;background:#11111a99;text-align:left;cursor:pointer;transition:border-color .2s,background .2s,transform .2s}.station:hover{border-color:#ff58cf66;background:#171520;transform:translateY(-2px)}.ship{width:70px;height:54px;flex:0 0 auto;display:grid;place-items:center;border:1px solid #302b3c;border-radius:8px;background:#080810;color:var(--pink);font-size:22px}.station:nth-child(2) .ship{color:var(--cyan)}.station:nth-child(3) .ship{color:var(--amber)}.station-copy{min-width:0}.station-code{color:#c985ef;font:8px ui-monospace,monospace;letter-spacing:.1em}.station-title{display:block;margin:4px 0;font-size:12px;font-weight:550}.station-desc{display:block;color:var(--muted);font-size:9px;line-height:1.4}.station-action{display:inline-block;margin-top:7px;color:#aaa6b7;font:8px ui-monospace,monospace;letter-spacing:.08em}.footer{display:flex;justify-content:space-between;gap:10px;margin-top:14px;color:var(--muted);font:9px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase}.toast{position:fixed;right:20px;bottom:20px;z-index:90;max-width:min(420px,calc(100vw - 40px));padding:11px 15px;border:1px solid #39ff8845;border-radius:9px;background:#101019;color:var(--text);font-size:12px;box-shadow:0 10px 36px #0008;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none}.toast.show{opacity:1;transform:translateY(0)}.webgl-error{position:absolute;z-index:4;inset:50% auto auto 50%;width:min(80%,420px);transform:translate(-50%,-50%);color:#ffb4c0;text-align:center;font-size:13px;line-height:1.6}.empty{display:grid;min-height:570px;place-content:center;padding:28px;text-align:center;color:var(--muted)}.empty strong{color:var(--text);font-size:13px;font-weight:500}.empty p{max-width:220px;font-size:11px;line-height:1.6}
   </style>
   <style>
     .live-fleet{margin-top:17px;padding:18px;border:1px solid var(--border);border-radius:16px;background:linear-gradient(145deg,#11111bcc,#0b0b12dd)}.fleet-header{display:flex;justify-content:space-between;align-items:center;gap:16px}.fleet-eyebrow{margin:0;color:var(--pink);font-size:9px;letter-spacing:.16em}.fleet-header h2{margin:6px 0 4px;font-size:16px;font-weight:550}.fleet-copy{margin:0;color:var(--muted);font-size:10px}.monitor-state{display:flex;align-items:center;gap:8px;flex:0 0 auto;padding:8px 10px;border:1px solid var(--border);border-radius:999px;background:#0a0a11;color:var(--muted);font:9px ui-monospace,monospace;letter-spacing:.1em}.monitor-state.online{border-color:#39ff8840;color:var(--green)}.monitor-state.offline{border-color:#ff526d40;color:#ff9cab}.monitor-state.connecting{border-color:#ffc85740;color:#ffe8a8}.state-dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor}.monitor-state.online .state-dot{animation:monitor-pulse 1.8s ease-in-out infinite}@keyframes monitor-pulse{50%{opacity:.4;transform:scale(.8)}}.scan-progress{margin-top:14px;padding:9px 11px;border:1px solid #393345;border-radius:7px;background:#08081088;color:#a7a2b5;font:9px/1.5 ui-monospace,monospace}.scan-progress.active{border-color:#ff58cf45;color:#f1c5e5}.fleet-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}.fleet-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;min-width:0;padding:11px;border:1px solid var(--border);border-radius:9px;background:#0808108c;text-align:left;cursor:pointer;transition:border-color .18s,background .18s,transform .18s}.fleet-item:hover{transform:translateY(-1px);border-color:#ff58cf66;background:#171520}.fleet-item.status-online{border-color:#39ff8833}.fleet-item.status-degraded{border-color:#ffc85755}.fleet-item.status-offline{border-color:#ff526d45}.fleet-name{overflow:hidden;color:var(--text);font-size:10px;font-weight:550;text-overflow:ellipsis;white-space:nowrap}.fleet-ip{grid-column:1;color:var(--muted);font:9px ui-monospace,monospace}.fleet-state{grid-column:2;grid-row:1/3;align-self:center;color:var(--muted);font:8px ui-monospace,monospace;letter-spacing:.08em}.fleet-item.status-online .fleet-state{color:var(--green)}.fleet-item.status-degraded .fleet-state{color:var(--amber)}.fleet-item.status-offline .fleet-state{color:#ff8a9a}.fleet-latency{grid-column:1;color:#b8b2c4;font:8px ui-monospace,monospace}.activity-heading{display:flex;justify-content:space-between;margin:16px 0 8px;color:var(--muted);font-size:8px;letter-spacing:.13em}.monitor-logs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.monitor-log{display:grid;grid-template-columns:62px minmax(0,1fr);gap:8px;padding:8px;border:1px solid #292735;border-radius:6px;background:#08081088;font-size:9px;line-height:1.45}.monitor-log time{color:var(--muted);font:8px ui-monospace,monospace}.monitor-log strong{color:var(--text);font-weight:450;overflow-wrap:anywhere}.monitor-log.ok strong{color:#9effbd}.monitor-log.warn strong{color:#ffe29a}.monitor-log .log-host{display:block;color:var(--muted);font:8px ui-monospace,monospace}.log-empty{grid-column:1/-1;padding:12px;border:1px dashed #343141;border-radius:7px;color:var(--muted);font-size:10px;text-align:center}.node-label.live-hidden{display:none}.node-label{z-index:2}.station[disabled]{opacity:.55;cursor:wait}.station[disabled]:hover{transform:none}
-    @media(max-width:760px){.live-fleet{padding:14px}.fleet-list{grid-template-columns:repeat(2,minmax(0,1fr))}.monitor-logs{grid-template-columns:1fr}.fleet-header{align-items:flex-start}.monitor-state{padding:7px;font-size:8px}}
-    @media(max-width:430px){.fleet-list{grid-template-columns:1fr}.fleet-header h2{font-size:14px}.fleet-copy{max-width:230px;line-height:1.5}.scan-progress{font-size:8px}.fleet-item{padding:10px}}
+  </style>
+  <style>
+    /* ── 6-ship fleet grid ── */
+    .ships .station-head small{font-size:8px}
+    .ship-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+    .ship-card{position:relative;display:flex;align-items:center;gap:13px;min-height:104px;padding:14px;border:1px solid var(--border);border-radius:13px;background:#11111a99;text-align:left;cursor:pointer;transition:border-color .2s,background .2s,transform .2s,box-shadow .2s;overflow:hidden}
+    .ship-card:hover{border-color:color-mix(in srgb,var(--c) 55%,transparent);background:#16151f;transform:translateY(-2px);box-shadow:0 8px 26px -12px color-mix(in srgb,var(--c) 40%,transparent)}
+    .ship-card:active{transform:translateY(0) scale(.995)}
+    .ship-card:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 12% 18%,color-mix(in srgb,var(--c) 16%,transparent),transparent 55%);pointer-events:none}
+    .ship-card .ship-icon{width:54px;height:54px;flex:0 0 auto;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--c) 45%,#302b3c);border-radius:11px;background:#080810;color:var(--c);font-size:24px;box-shadow:0 0 18px -2px color-mix(in srgb,var(--c) 55%,transparent)}
+    .ship-copy{min-width:0;position:relative}
+    .ship-code{color:var(--c);font:8px ui-monospace,monospace;letter-spacing:.12em;opacity:.92}
+    .ship-title{display:block;margin:5px 0 3px;font-size:13px;font-weight:550;letter-spacing:-.01em}
+    .ship-desc{display:block;color:var(--muted);font-size:9px;line-height:1.45}
+    .ship-cta{display:inline-block;margin-top:7px;color:#aaa6b7;font:8px ui-monospace,monospace;letter-spacing:.08em}
+    .ship-card:hover .ship-cta{color:var(--c)}
+
+    /* ── modal overlay ── */
+    .modal-root{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .22s}
+    .modal-root.open{opacity:1;pointer-events:auto}
+    .modal-backdrop{position:absolute;inset:0;background:rgba(4,4,10,.74);backdrop-filter:blur(6px)}
+    .modal-panel{position:relative;width:min(900px,100%);max-height:calc(100vh - 48px);display:flex;flex-direction:column;border:1px solid color-mix(in srgb,var(--mc) 45%,var(--border));border-radius:18px;background:linear-gradient(160deg,#12111c,#0a0a11 70%);box-shadow:0 30px 80px -20px #000c,0 0 50px -18px color-mix(in srgb,var(--mc) 55%,transparent);transform:translateY(14px) scale(.99);transition:transform .26s cubic-bezier(.4,0,.2,1)}
+    .modal-root.open .modal-panel{transform:none}
+    .modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:18px 20px;border-bottom:1px solid var(--border)}
+    .modal-title-wrap{display:flex;gap:13px;align-items:flex-start;min-width:0}
+    .modal-ship-icon{width:46px;height:46px;flex:0 0 auto;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--mc) 50%,#302b3c);border-radius:12px;background:#080810;color:var(--mc);font-size:22px;box-shadow:0 0 20px -4px color-mix(in srgb,var(--mc) 60%,transparent)}
+    .modal-eyebrow{color:var(--mc);font:8px ui-monospace,monospace;letter-spacing:.16em}
+    .modal-head h2{margin:4px 0 0;font-size:18px;font-weight:550;letter-spacing:-.02em;overflow-wrap:anywhere}
+    .modal-close{flex:0 0 auto;width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--border);border-radius:9px;background:#0b0b12;color:var(--muted);font-size:18px;cursor:pointer;transition:color .2s,border-color .2s}
+    .modal-close:hover{color:var(--text);border-color:var(--mc)}
+    .modal-body{padding:20px;overflow:auto}
+    .panel-note{padding:10px 12px;border:1px dashed #343141;border-radius:8px;color:var(--muted);font-size:11px;line-height:1.5}
+    .panel-grid{display:grid;gap:14px}
+    .panel-section-title{display:flex;justify-content:space-between;align-items:center;margin:2px 0 8px;color:var(--muted);font:9px ui-monospace,monospace;letter-spacing:.13em}
+    .panel-section-title b{padding:3px 7px;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:8px;font-weight:400}
+
+    /* port matrix */
+    .port-matrix{overflow:auto;border:1px solid var(--border);border-radius:10px;background:#08080f}
+    .port-matrix table{width:100%;border-collapse:collapse;font:9px ui-monospace,monospace}
+    .port-matrix th,.port-matrix td{padding:8px 10px;text-align:center;border-bottom:1px solid #20202b}
+    .port-matrix th{color:var(--muted);font-size:8px;letter-spacing:.1em;background:#0c0c14;position:sticky;top:0}
+    .port-matrix td.label{text-align:left;color:var(--text);font-size:10px}
+    .port-matrix td.label small{display:block;color:var(--muted);font-size:8px;margin-top:2px}
+    .port-cell{display:inline-grid;place-items:center;width:30px;height:24px;border-radius:5px;font-size:9px}
+    .port-cell.open{color:#06080a;background:var(--green);box-shadow:0 0 10px -2px var(--green);animation:port-pulse 2.4s ease-in-out infinite}
+    .port-cell.closed{color:#ff9cab;background:#ff526d22;border:1px solid #ff526d44}
+    .port-cell.pending{color:var(--muted);background:#16162066;border:1px dashed #2b2b38}
+    @keyframes port-pulse{50%{box-shadow:0 0 18px 0 var(--green);filter:brightness(1.15)}}
+
+    /* ipam grid */
+    .ipam-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:4px;padding:4px}
+    .ipam-cell{aspect-ratio:1/1;display:grid;place-items:center;border:1px solid #1d1d28;border-radius:5px;background:#0b0b12;color:var(--muted);font:7px ui-monospace,monospace;position:relative;cursor:default;transition:transform .12s,border-color .12s}
+    .ipam-cell.online{border-color:#39ff8855;background:#39ff8814;color:#9effbd;box-shadow:0 0 8px -3px var(--green)}
+    .ipam-cell.degraded{border-color:#ffc85755;background:#ffc85714;color:#ffe29a}
+    .ipam-cell.offline{border-color:#ff526d44;background:#ff526d12;color:#ff9cab}
+    .ipam-cell.anchor{border-color:#ff58cf66;background:#ff58cf18;color:#ffb4e8;box-shadow:0 0 10px -3px var(--pink)}
+    .ipam-cell:hover{transform:scale(1.45);z-index:5;border-color:#fff}
+    .ipam-tip{position:absolute;bottom:135%;left:50%;transform:translateX(-50%);padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:#07070df2;color:var(--text);font:8px ui-monospace,monospace;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s;z-index:10}
+    .ipam-cell:hover .ipam-tip{opacity:1}
+
+    /* wol */
+    .wol-form{display:grid;gap:12px}
+    .wol-row{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+    .wol-field label{display:block;margin-bottom:6px;color:var(--muted);font:8px ui-monospace,monospace;letter-spacing:.12em}
+    .wol-field input{width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:9px;background:#08080f;color:var(--text);font:12px ui-monospace,monospace}
+    .wol-field input:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px #ffc85722}
+    .wol-broadcast{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .btn-ignite{flex:1;min-width:200px;padding:16px 18px;border:1px solid var(--amber);border-radius:11px;background:linear-gradient(135deg,#ffc85722,#ff526d1a);color:#ffe8a8;font:12px ui-monospace,monospace;letter-spacing:.14em;cursor:pointer;transition:transform .15s,box-shadow .2s,background .2s;box-shadow:0 0 24px -8px var(--amber)}
+    .btn-ignite:hover{transform:translateY(-2px);box-shadow:0 0 34px -6px var(--amber);background:linear-gradient(135deg,#ffc85733,#ff526d2a)}
+    .btn-ignite:active{transform:translateY(0) scale(.98)}
+    .btn-ignite:disabled{opacity:.5;cursor:wait}
+    .wol-events{margin-top:6px;max-height:200px;overflow:auto;border:1px solid var(--border);border-radius:9px;background:#08080f}
+    .wol-events .monitor-log{border:0;border-bottom:1px solid #1a1a24;border-radius:0}
+
+    /* vendor list */
+    .vendor-list{display:grid;gap:8px}
+    .vendor-row{display:flex;align-items:center;gap:12px;padding:11px 13px;border:1px solid var(--border);border-radius:9px;background:#0b0b12}
+    .vendor-badge{flex:0 0 auto;padding:4px 9px;border:1px solid;color:inherit;border-radius:99px;font:8px ui-monospace,monospace;letter-spacing:.08em;white-space:nowrap}
+    .vendor-name{flex:1;min-width:0}
+    .vendor-name b{display:block;color:var(--text);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .vendor-name small{color:var(--muted);font:8px ui-monospace,monospace}
+    .vendor-mac{flex:0 0 auto;color:#b8b2c4;font:9px ui-monospace,monospace}
+
+    /* performance dials */
+    .perf-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .perf-card{padding:15px;border:1px solid var(--border);border-radius:11px;background:#0b0b12}
+    .gauge-wrap{position:relative;display:grid;place-items:center;margin:6px 0}
+    .gauge-wrap svg{width:150px;height:150px}
+    .gauge-center{position:absolute;text-align:center}
+    .gauge-value{font:26px ui-monospace,monospace;font-weight:600;letter-spacing:-.02em}
+    .gauge-unit{color:var(--muted);font:8px ui-monospace,monospace;letter-spacing:.14em;margin-top:2px}
+    .stability-tag{display:inline-block;margin-top:8px;padding:4px 10px;border:1px solid;border-radius:99px;font:8px ui-monospace,monospace;letter-spacing:.1em}
+    .stability-tag.ok{color:var(--green);border-color:#39ff8855;background:#39ff880d}
+    .stability-tag.warn{color:var(--amber);border-color:#ffc85755;background:#ffc8570d}
+    .stability-tag.bad{color:#ff9cab;border-color:#ff526d55;background:#ff526d0d}
+    .latency-chart{width:100%;height:90px}
+    .dns-table{width:100%;border-collapse:collapse;font:9px ui-monospace,monospace}
+    .dns-table th,.dns-table td{padding:7px 8px;text-align:left;border-bottom:1px solid #20202b}
+    .dns-table th{color:var(--muted);font-size:8px;letter-spacing:.1em}
+    .throughput-row{margin-bottom:11px}
+    .throughput-row .th-name{display:flex;justify-content:space-between;color:var(--muted);font:8px ui-monospace,monospace;letter-spacing:.1em;margin-bottom:5px}
+    .bar-track{height:8px;border-radius:99px;background:#16161f;overflow:hidden;position:relative}
+    .bar-fill{height:100%;border-radius:99px;transition:width .4s cubic-bezier(.4,0,.2,1)}
+
+    /* proxmox / plex */
+    .pve-node{padding:12px;border:1px solid var(--border);border-radius:10px;background:#0b0b12;margin-bottom:9px}
+    .pve-node-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+    .pve-node-name{font-size:12px;font-weight:550}
+    .pve-vm{display:flex;align-items:center;gap:11px;padding:9px 11px;border:1px solid #20202b;border-radius:8px;background:#08080f;margin-bottom:6px}
+    .vm-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 8px currentColor}
+    .plex-sessions{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+    .plex-card{border:1px solid var(--border);border-radius:11px;background:#0b0b12;overflow:hidden}
+    .plex-poster{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:#16161f}
+    .plex-meta{padding:10px}
+    .plex-title{font-size:11px;font-weight:550;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .plex-user{color:var(--muted);font:8px ui-monospace,monospace;margin-top:4px}
+
+    /* ── docker panel ── */
+    .docker-panel{margin-top:17px;padding:18px;border:1px solid var(--border);border-radius:16px;background:linear-gradient(145deg,#11111bcc,#0b0b12dd)}
+    .docker-panel .station-head{margin-bottom:14px}
+    .docker-notice{padding:14px;border:1px dashed #ff526d55;border-radius:10px;background:#ff526d0d;color:#ff9cab;font:11px ui-monospace,monospace;text-align:center}
+    .docker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:11px}
+    .container-card{padding:14px;border:1px solid var(--border);border-radius:12px;background:#0b0b12}
+    .ct-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
+    .ct-name{font-size:12px;font-weight:550;overflow-wrap:anywhere}
+    .ct-image{color:var(--muted);font:8px ui-monospace,monospace;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .ct-badge{flex:0 0 auto;padding:3px 8px;border:1px solid;border-radius:99px;font:8px ui-monospace,monospace;letter-spacing:.06em;white-space:nowrap}
+    .ct-badge.running{color:var(--green);border-color:#39ff8855;background:#39ff880d}
+    .ct-badge.exited{color:#ff9cab;border-color:#ff526d55;background:#ff526d0d}
+    .ct-badge.paused{color:#ffe29a;border-color:#ffc85755;background:#ffc8570d}
+    .ct-bar{margin:8px 0}
+    .ct-bar-label{display:flex;justify-content:space-between;color:var(--muted);font:8px ui-monospace,monospace;margin-bottom:4px}
+    .ct-ports{color:var(--muted);font:8px ui-monospace,monospace;margin:8px 0 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .ct-actions{display:flex;gap:7px}
+    .ct-btn{flex:1;padding:7px;border:1px solid var(--border);border-radius:7px;background:#08080f;color:#b8b2c4;font:8px ui-monospace,monospace;letter-spacing:.08em;cursor:pointer;transition:all .16s}
+    .ct-btn:hover{color:var(--text);border-color:#39ff8855}
+    .ct-btn.start:hover{border-color:var(--green);color:var(--green);box-shadow:0 0 12px -4px var(--green)}
+    .ct-btn.stop:hover{border-color:var(--red);color:#ff9cab;box-shadow:0 0 12px -4px var(--red)}
+    .ct-btn.restart:hover{border-color:var(--amber);color:#ffe29a;box-shadow:0 0 12px -4px var(--amber)}
+    .ct-btn:disabled{opacity:.5;cursor:wait}
+
+    /* ── github telemetry ── */
+    .github-panel{margin-top:17px;padding:18px;border:1px solid var(--border);border-radius:16px;background:linear-gradient(145deg,#11111bcc,#0b0b12dd)}
+    .github-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px}
+    .github-repo{display:flex;align-items:center;gap:9px;color:var(--text);font:12px ui-monospace,monospace}
+    .github-repo .repo-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+    .github-sha{color:var(--cyan);font:9px ui-monospace,monospace;letter-spacing:.06em}
+    .github-feed{max-height:340px;overflow:auto;border:1px solid var(--border);border-radius:11px;background:#08080f}
+    .gh-entry{display:grid;grid-template-columns:62px 40px 1fr auto;gap:10px;padding:11px 13px;border-bottom:1px solid #1a1a24;font-size:10px;align-items:center}
+    .gh-entry:last-child{border-bottom:0}
+    .gh-time{color:var(--muted);font:8px ui-monospace,monospace}
+    .gh-type{display:inline-grid;place-items:center;width:34px;height:22px;border:1px solid var(--border);border-radius:5px;font:7px ui-monospace,monospace;letter-spacing:.04em;text-align:center}
+    .gh-type.push{color:var(--green);border-color:#39ff8855;background:#39ff880d}
+    .gh-type.create{color:var(--cyan);border-color:#68e8ff55;background:#68e8ff0d}
+    .gh-type.watch{color:#ffe29a;border-color:#ffc85755;background:#ffc8570d}
+    .gh-type.issue{color:#ff9cab;border-color:#ff526d55;background:#ff526d0d}
+    .gh-type.other{color:var(--muted)}
+    .gh-msg{color:var(--text);overflow-wrap:anywhere;min-width:0}
+    .gh-msg small{display:block;color:var(--muted);font:8px ui-monospace,monospace;margin-top:2px}
+    .gh-sha{color:var(--cyan);font:8px ui-monospace,monospace;white-space:nowrap}
+
+    /* ── diagnostics row ── */
+    .diag-row{margin-top:17px;display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+    .diag-card{padding:16px;border:1px solid var(--border);border-radius:14px;background:linear-gradient(160deg,#11111bcc,#0b0b12dd);min-height:220px}
+    .diag-head{display:flex;align-items:center;gap:10px;margin-bottom:13px}
+    .diag-icon{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--border);border-radius:9px;font-size:15px}
+    .diag-title{font-size:12px;font-weight:550}
+    .diag-sub{color:var(--muted);font:8px ui-monospace,monospace;letter-spacing:.1em;margin-top:2px}
+    .diag-list{display:grid;gap:8px;max-height:240px;overflow:auto}
+    .diag-item{padding:10px 11px;border:1px solid #20202b;border-radius:8px;background:#08080f;font-size:10px}
+    .diag-item .di-top{display:flex;justify-content:space-between;gap:8px}
+    .diag-item .di-name{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .diag-item .di-val{flex:0 0 auto;font:9px ui-monospace,monospace}
+    .diag-item .di-meta{color:var(--muted);font:8px ui-monospace,monospace;margin-top:4px}
+    .diag-item.danger{border-color:#ff526d55;background:#ff526d0d}
+    .diag-item.danger .di-val{color:#ff9cab}
+    .diag-item.warn{border-color:#ffc85755;background:#ffc8570d}
+    .diag-item.warn .di-val{color:#ffe29a}
+    .diag-item.ok .di-val{color:var(--green)}
+    .weather-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .weather-stat{padding:10px;border:1px solid #20202b;border-radius:8px;background:#08080f}
+    .weather-stat .ws-label{color:var(--muted);font:8px ui-monospace,monospace;letter-spacing:.1em}
+    .weather-stat .ws-val{margin-top:4px;font:16px ui-monospace,monospace}
+    .weather-storm{margin-top:10px;padding:9px 11px;border:1px solid #ff526d55;border-radius:8px;background:#ff526d0d;color:#ff9cab;font:9px ui-monospace,monospace;letter-spacing:.08em;text-align:center;animation:port-pulse 2.2s ease-in-out infinite}
+
+    /* ── plex hologram ── */
+    .plex-holo{position:fixed;right:28px;bottom:28px;z-index:60;width:140px;pointer-events:none;opacity:0;transform:translateY(20px);transition:opacity .4s,transform .4s}
+    .plex-holo.active{opacity:1;transform:none}
+    .plex-holo-stage{position:relative;perspective:600px}
+    .plex-holo-poster{width:140px;height:210px;object-fit:cover;border-radius:10px;border:1px solid #68e8ff66;box-shadow:0 0 40px -6px var(--cyan),0 14px 40px -10px #000a;animation:holo-spin 8s linear infinite;backface-visibility:visible}
+    @keyframes holo-spin{0%{transform:rotateY(0)}100%{transform:rotateY(360deg)}}
+    .plex-holo-base{margin-top:10px;text-align:center}
+    .plex-holo-title{color:var(--cyan);font:9px ui-monospace,monospace;letter-spacing:.06em;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 0 12px var(--cyan)}
+    .plex-holo-eyebrow{color:var(--muted);font:7px ui-monospace,monospace;letter-spacing:.14em;margin-bottom:4px}
+  </style>
+  <style>
+    @media(max-width:1050px){.workspace{grid-template-columns:minmax(0,1fr) 310px}.app{padding-inline:22px}.intro{align-items:flex-start;flex-direction:column}.metrics{width:100%}.metric{flex:1}.ship-grid{grid-template-columns:repeat(2,1fr)}.diag-row{grid-template-columns:1fr}.perf-grid{grid-template-columns:1fr}.wol-row{grid-template-columns:1fr}}
+    @media(max-width:760px){.app{padding-inline:14px}.topbar{height:64px}.summary{display:none}.grid-id{font-size:9px}.intro{padding:24px 0 18px}.workspace{grid-template-columns:1fr}.field{min-height:550px}.inspector{min-height:0}.inspector-body{padding:16px}.station-grid{grid-template-columns:1fr}.ship-grid{grid-template-columns:1fr}.footer{font-size:8px}.metric{min-width:0;padding:10px}.metric-value{font-size:17px}.metric-detail{display:none}.live-fleet{padding:14px}.fleet-list{grid-template-columns:repeat(2,minmax(0,1fr))}.monitor-logs{grid-template-columns:1fr}.fleet-header{align-items:flex-start}.monitor-state{padding:7px;font-size:8px}.plex-holo{width:96px;right:14px;bottom:14px}.plex-holo-poster{width:96px;height:144px}}
+    @media(max-width:430px){.brand-sub{font-size:8px}.grid-id{letter-spacing:.02em}.field{min-height:515px}.field-hud{top:12px;left:10px;font-size:8px}.field-controls{top:12px;right:10px;gap:5px}.speed-control{gap:5px;padding:6px;font-size:8px}.speed-control input{width:55px}.sample-tag{font-size:8px}.node-label{max-width:125px;font-size:7px}.legend{left:10px;bottom:12px;gap:8px;font-size:8px}.fleet-list{grid-template-columns:1fr}.fleet-header h2{font-size:14px}.fleet-copy{max-width:230px;line-height:1.5}.scan-progress{font-size:8px}.fleet-item{padding:10px}}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
   </style>
 </head>
 <body>
@@ -50,16 +244,52 @@
       <div class="activity-heading mono"><span>RESPONSE TRACKING LOG</span><span id="log-count">0 EVENTS</span></div>
       <div id="monitor-logs" class="monitor-logs" aria-live="polite"><div class="log-empty">No scan events received yet.</div></div>
     </section>
-    <section class="stations" aria-labelledby="stations-title">
-      <div class="station-head"><div><p>✧ ORBITAL STATIONS</p><h2 id="stations-title">Fleet command deck</h2></div><small class="mono">LOCAL NETWORK TOOLS</small></div>
-      <div class="station-grid">
-        <button class="station" type="button" data-select="Gateway eero Router"><span class="ship" aria-hidden="true">⌁</span><span class="station-copy"><span class="station-code">NEXUS · 01</span><span class="station-title">Core uplink</span><span class="station-desc">Inspect 192.168.4.1</span><span class="station-action">OPEN GATEWAY →</span></span></button>
-        <button class="station" type="button" data-select="Proxmox VE Hypervisor"><span class="ship" aria-hidden="true">◉</span><span class="station-copy"><span class="station-code">MIRAGE · 02</span><span class="station-title">Compute backbone</span><span class="station-desc">Inspect 192.168.4.200</span><span class="station-action">OPEN HYPERVISOR →</span></span></button>
-        <button class="station" id="scan" type="button"><span class="ship" aria-hidden="true">⌖</span><span class="station-copy"><span class="station-code">ATLAS · 03</span><span class="station-title">Subnet discovery</span><span id="scan-desc" class="station-desc">Sweep 192.168.4.2–254 for responding hosts</span><span id="scan-action" class="station-action">RUN SUBNET SWEEP →</span></span></button>
+    <section class="ships stations" aria-labelledby="ships-title">
+      <div class="station-head"><div><p>✧ ORBITAL FLEET</p><h2 id="ships-title">Fleet command deck</h2></div><small class="mono">6 SHIPS · LOCAL NETWORK TOOLS</small></div>
+      <div id="ship-grid" class="ship-grid"></div>
+    </section>
+    <section class="docker-panel" aria-labelledby="docker-title">
+      <div class="station-head"><div><p style="color:var(--green)">◆ CONTAINER ENGINE</p><h2 id="docker-title">Docker container monitor</h2></div><small class="mono" id="docker-meta">AWAITING ENGINE</small></div>
+      <div id="docker-body"><div class="docker-notice">Connecting to the container engine…</div></div>
+    </section>
+    <section class="github-panel" aria-labelledby="github-title">
+      <div class="github-head">
+        <div class="github-repo"><span class="repo-dot"></span><span>Hemiboy98/neonspace-network-dashboard</span></div>
+        <span id="github-sha" class="github-sha">—</span>
+      </div>
+      <div class="station-head" style="margin:0 0 10px"><div><p style="color:var(--cyan)">⎇ REPOSITORY TELEMETRY</p><h2 id="github-title" style="font-size:13px">GitHub event feed</h2></div><small class="mono" id="github-meta">0 EVENTS</small></div>
+      <div id="github-feed" class="github-feed"><div class="panel-note">Waiting for repository event telemetry from the GitHub API…</div></div>
+    </section>
+    <section class="diag-row" aria-label="Enterprise diagnostics">
+      <div class="diag-card">
+        <div class="diag-head"><div class="diag-icon" style="color:var(--green)">chandle</div><div><div class="diag-title">SSL certificate warnings</div><div class="diag-sub mono">EXPIRY SWEEP · TLS HANDSHAKE</div></div></div>
+        <div id="ssl-list" class="diag-list"><div class="panel-note">Awaiting certificate probe results…</div></div>
+      </div>
+      <div class="diag-card">
+        <div class="diag-head"><div class="diag-icon" style="color:var(--amber)">⏧</div><div><div class="diag-title">SMART storage health</div><div class="diag-sub mono">DRIVE TELEMETRY · smartctl</div></div></div>
+        <div id="smart-list" class="diag-list"><div class="panel-note">Awaiting SMART drive probe…</div></div>
+      </div>
+      <div class="diag-card">
+        <div class="diag-head"><div class="diag-icon" style="color:var(--cyan)">☀</div><div><div class="diag-title">Atmospheric weather</div><div class="diag-sub mono">OPEN-METEO · LOCAL GRID</div></div></div>
+        <div id="weather-body"><div class="panel-note">Awaiting atmospheric telemetry…</div></div>
       </div>
     </section>
     <footer class="footer"><span>Live reachability comes from container-host ICMP and ARP observations</span><span>Network placement is logical, not a measured route map</span></footer>
   </main>
+  <div id="plex-holo" class="plex-holo" aria-hidden="true">
+    <div class="plex-holo-stage"><img id="plex-holo-poster" class="plex-holo-poster" alt="" /></div>
+    <div class="plex-holo-base"><div class="plex-holo-eyebrow mono">NOW STREAMING</div><div id="plex-holo-title" class="plex-holo-title"></div></div>
+  </div>
+  <div id="modal-root" class="modal-root" aria-hidden="true">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head">
+        <div class="modal-title-wrap"><span id="modal-icon" class="modal-ship-icon" aria-hidden="true"></span><div><div id="modal-eyebrow" class="modal-eyebrow mono"></div><h2 id="modal-title"></h2></div></div>
+        <button class="modal-close" type="button" data-close aria-label="Close panel">×</button>
+      </div>
+      <div id="modal-body" class="modal-body"></div>
+    </div>
+  </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script>
     (()=>{
@@ -90,7 +320,6 @@
       }
       renderInspector();
       document.querySelector('#speed').addEventListener('input',e=>{speed=Number(e.target.value);document.querySelector('#speed-value').textContent=`${speed.toFixed(2)}×`});
-      document.querySelectorAll('[data-select]').forEach(b=>b.addEventListener('click',()=>select(b.dataset.select)));
       function showToast(message){const el=document.querySelector('#toast');el.textContent=message;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2600)}
       function anchor(name,i){const fixed={'Gateway eero Router':[.16,.52],'Proxmox VE Hypervisor':[.40,.52],'Homarr Cockpit Portal':[.64,.28],'Docker Host Engine':[.64,.70],'Chronos-05 Plex Vault':[.84,.70]};if(fixed[name])return fixed[name];const ip=monitorNodes.get(name)?.ip||'',last=Number(ip.split('.').at(-1))||i,angle=last*2.399963,spread=.25+((last*7)%12)/100;return[.5+Math.cos(angle)*spread,.5+Math.sin(angle)*spread]}
       function updateLabels(){for(const n of nodes.values()){const el=labelEls.get(n.id);if(!el)continue;el.style.left=`${n.x/Math.max(width,1)*100}%`;el.style.top=`${n.y/Math.max(height,1)*100}%`;el.classList.toggle('selected',selected===n.id);el.classList.toggle('live-hidden',monitorNodes.get(n.id)?.role==='discovered'&&selected!==n.id)}}
@@ -151,21 +380,251 @@
   </script>
   <script>
     (()=>{
-      const summary=document.querySelector('#summary'),state=document.querySelector('#monitor-state'),copy=document.querySelector('#monitor-copy'),scan=document.querySelector('#scan'),scanAction=document.querySelector('#scan-action'),scanDesc=document.querySelector('#scan-desc'),progress=document.querySelector('#scan-progress'),fleet=document.querySelector('#fleet-list'),logPanel=document.querySelector('#monitor-logs'),logCount=document.querySelector('#log-count'),toast=document.querySelector('#toast');
-      const knownHosts=new Map(),events=[];
-      let socket=null,retryTimer=null,renderQueued=false,scanning=false;
-      const safe=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-      const statusName=value=>['online','degraded','offline','unknown'].includes(value)?value:'unknown';
-      const showToast=message=>{toast.textContent=message;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2800)};
-      function setConnection(connected){state.className=`monitor-state ${connected?'online':'offline'}`;state.innerHTML=`<span class="state-dot"></span><span>${connected?'MONITOR ONLINE':'MONITOR OFFLINE'}</span>`;document.querySelector('#sample-tag').textContent=connected?'● LIVE LINK':'● NO LINK';copy.textContent=connected?'Connected to the container monitor. Host reachability, ICMP latency, and ARP evidence update as probes complete.':'No scanner connection. Live LAN results appear when this page is served by the Docker container.';if(!connected){scanning=false;scan.disabled=false;scanAction.textContent='RUN SUBNET SWEEP →';summary.textContent='MONITOR OFFLINE';document.querySelector('#metric-latency').innerHTML='— <small>ms</small>';document.querySelector('#metric-latency-detail').textContent='Waiting for monitor connection'}}
-      function updateSummary(){const values=[...knownHosts.values()],online=values.filter(item=>item.status==='online').length,degraded=values.filter(item=>item.status==='degraded').length,offline=values.filter(item=>item.status==='offline').length,unknown=values.filter(item=>item.status==='unknown').length,total=values.length,latencies=values.map(item=>item.latencyMs).filter(Number.isFinite).sort((a,b)=>a-b),middle=Math.floor(latencies.length/2),median=latencies.length?(latencies.length%2?latencies[middle]:(latencies[middle-1]+latencies[middle])/2):null;summary.textContent=`${online} ONLINE · ${degraded} DEGRADED · ${offline} OFFLINE${unknown?` · ${unknown} PENDING`:''}`;document.querySelector('#metric-nodes').textContent=String(total).padStart(2,'0');document.querySelector('#metric-host-detail').textContent=`${online+degraded} responding · ${offline} offline · ${unknown} pending`;document.querySelector('#metric-latency').innerHTML=Number.isFinite(median)?`${median.toFixed(1)} <small>ms</small>`:'— <small>ms</small>';document.querySelector('#metric-latency-detail').textContent=Number.isFinite(median)?'median response time':'no ICMP latency yet'}
+      'use strict';
+      const $=id=>document.getElementById(id), summary=$('summary'),stateEl=$('monitor-state'),copy=$('monitor-copy'),progress=$('scan-progress'),fleet=$('fleet-list'),logPanel=$('monitor-logs'),logCount=$('log-count'),toast=$('toast');
+      const shipGrid=$('ship-grid'),modalRoot=$('modal-root'),modalBody=$('modal-body'),modalIcon=$('modal-icon'),modalEyebrow=$('modal-eyebrow'),modalTitle=$('modal-title'),modalPanel=modalRoot.querySelector('.modal-panel');
+      const dockerBody=$('docker-body'),dockerMeta=$('docker-meta'),githubFeed=$('github-feed'),githubMeta=$('github-meta'),githubSha=$('github-sha'),sslList=$('ssl-list'),smartList=$('smart-list'),weatherBody=$('weather-body'),plexHolo=$('plex-holo'),plexHoloPoster=$('plex-holo-poster'),plexHoloTitle=$('plex-holo-title');
+
+      const knownHosts=new Map(), events=[];
+      let socket=null, retryTimer=null, renderQueued=false, scanning=false, openShip=null;
+
+      // telemetry state store
+      const T={portMatrix:{},wan:{lossPct:0,rttMs:null,rttMin:null,rttMax:null,totalDrops:0,history:[]},ssl:[],dns:[],docker:{containers:[],available:false},dockerError:null,github:{events:[],commits:[],latestSha:null},smart:[],plex:{sessions:[],artwork:[],activeStreams:0,configured:false},proxmox:{nodes:[],vms:[],configured:false},throughput:{interfaces:[],history:[]},weather:null};
+
+      const SHIPS=[
+        {id:1,code:'DREADNOUGHT · 01',name:'Command Ship',icon:'⌁',color:'#ff58cf',title:'Port Scanner Matrix',desc:'Probe .200 · .33 · .48 · .49 across 6 ports'},
+        {id:2,code:'RECONNAISSANCE · 02',name:'Scout Ship',icon:'◉',color:'#68e8ff',title:'IPAM Subnet Grid',desc:'Map 192.168.4.1–254 active leases'},
+        {id:3,code:'INTERCEPTOR · 03',name:'Tactical Fighter',icon:'⌖',color:'#ffc857',title:'Wake-on-LAN Ignition',desc:'Broadcast magic packets across LAN'},
+        {id:4,code:'LEVIATHAN · 04',name:'Carrier',icon:'◈',color:'#39ff88',title:'MAC Vendor Resolver',desc:'OUI lookup for discovered devices'},
+        {id:5,code:'VANGUARD · 05',name:'Cruiser',icon:'◊',color:'#b86ee8',title:'Network Performance',desc:'WAN loss · latency · DNS · throughput'},
+        {id:6,code:'SENTINEL · 06',name:'Frigate',icon:'◆',color:'#4a90e2',title:'Proxmox & Plex Telemetry',desc:'Hypervisor workload + media streams'},
+      ];
+      const PORT_TARGETS=['192.168.4.200','192.168.4.33','192.168.4.48','192.168.4.49'];
+      const PORT_LABELS={'192.168.4.200':'Proxmox VE','192.168.4.33':'Homarr','192.168.4.48':'Docker Host','192.168.4.49':'Plex Vault'};
+      const PORTS=[22,80,443,8006,32400,7575];
+
+      const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const statusName=v=>['online','degraded','offline','unknown'].includes(v)?v:'unknown';
+      const showToast=msg=>{toast.textContent=msg;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2800)};
+      const fmtBytes=b=>{b=b||0;const u=['B','KB','MB','GB','TB'];let i=0;while(b>=1024&&i<4){b/=1024;i++}return b.toFixed(b<10&&i>0?1:0)+u[i]};
+      const fmtBps=b=>{b=b||0;const u=['b/s','Kb/s','Mb/s','Gb/s'];let i=0;while(b>=1000&&i<3){b/=1000;i++}return b.toFixed(b<10&&i>0?1:0)+u[i]};
+      const fmtTime=iso=>iso?new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';
+      const fmtAgo=iso=>{if(!iso)return'—';const s=(Date.now()-new Date(iso).getTime())/1000;if(s<60)return`${Math.floor(s)}s ago`;if(s<3600)return`${Math.floor(s/60)}m ago`;return`${Math.floor(s/3600)}h ago`};
+
+      function setConnection(connected,connecting){stateEl.className=`monitor-state ${connecting?'connecting':connected?'online':'offline'}`;stateEl.innerHTML=`<span class="state-dot"></span><span>${connecting?'CONNECTING':connected?'MONITOR ONLINE':'MONITOR OFFLINE'}</span>`;$('sample-tag').textContent=connecting?'● CONNECTING':connected?'● LIVE LINK':'● NO LINK';copy.textContent=connecting?'Establishing a link to the container monitor…':connected?'Connected to the container monitor. Host reachability, ICMP latency, and ARP evidence update as probes complete.':'No scanner connection. Live LAN results appear when this page is served by the Docker container.';if(!connected&&!connecting){scanning=false;summary.textContent='MONITOR OFFLINE';$('metric-latency').innerHTML='— <small>ms</small>';$('metric-latency-detail').textContent='Waiting for monitor connection'}}
+
+      function updateSummary(){const values=[...knownHosts.values()],online=values.filter(i=>i.status==='online').length,degraded=values.filter(i=>i.status==='degraded').length,offline=values.filter(i=>i.status==='offline').length,unknown=values.filter(i=>i.status==='unknown').length,total=values.length,latencies=values.map(i=>i.latencyMs).filter(Number.isFinite).sort((a,b)=>a-b),middle=Math.floor(latencies.length/2),median=latencies.length?(latencies.length%2?latencies[middle]:(latencies[middle-1]+latencies[middle])/2):null;summary.textContent=`${online} ONLINE · ${degraded} DEGRADED · ${offline} OFFLINE${unknown?` · ${unknown} PENDING`:''}`;$('metric-nodes').textContent=String(total).padStart(2,'0');$('metric-host-detail').textContent=`${online+degraded} responding · ${offline} offline · ${unknown} pending`;$('metric-latency').innerHTML=Number.isFinite(median)?`${median.toFixed(1)} <small>ms</small>`:'— <small>ms</small>';$('metric-latency-detail').textContent=Number.isFinite(median)?'median response time':'no ICMP latency yet'}
+
       function renderFleet(){renderQueued=false;const rows=[...knownHosts.values()].sort((a,b)=>a.role===b.role?a.ip.localeCompare(b.ip):a.role==='anchor'?-1:1);fleet.replaceChildren();for(const host of rows){const status=statusName(host.status),button=document.createElement('button');button.type='button';button.className=`fleet-item status-${status}`;button.setAttribute('aria-label',`${host.name}, ${host.ip}, ${status}`);button.innerHTML=`<span class="fleet-name">${safe(host.name)}</span><span class="fleet-state">${safe(status.toUpperCase())}</span><span class="fleet-ip">${safe(host.ip)}</span><span class="fleet-latency">${Number.isFinite(host.latencyMs)?`${host.latencyMs.toFixed(1)} ms ICMP`:(host.macAddress?'ARP PRESENT · NO ICMP':'NO RESPONSE YET')}</span>`;button.addEventListener('click',()=>window.neonMeshMonitor?.select(host.name));fleet.append(button)}updateSummary()}
       function queueFleet(){if(renderQueued)return;renderQueued=true;requestAnimationFrame(renderFleet)}
-      function renderLogs(){const recent=events.slice(-10).reverse();logCount.textContent=`${events.length} EVENTS`;if(!recent.length){logPanel.innerHTML='<div class="log-empty">No scan events received yet.</div>';return}logPanel.innerHTML=recent.map(log=>`<div class="monitor-log ${safe(log.severity)}"><time>${safe(new Date(log.at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}))}</time><strong><span class="log-host">${safe(log.name)}${log.ip?` · ${safe(log.ip)}`:''}</span>${safe(log.message)}</strong></div>`).join('')}
-      function handleMessage(message){if(message.type==='snapshot'){knownHosts.clear();(message.nodes||[]).forEach(host=>knownHosts.set(host.ip,host));window.neonMeshMonitor?.applyMonitorSnapshot(message);events.splice(0,events.length,...(message.logs||[]));renderLogs();queueFleet();updateSummary();const done=message.lastDiscoveryCompletedAt;if(done){document.querySelector('#metric-discovery').textContent=new Date(done).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});document.querySelector('#metric-discovery-detail').textContent=`${message.discoveryIntervalMs/1000}s discovery interval`}return}if(message.type==='node'){knownHosts.set(message.node.ip,message.node);window.neonMeshMonitor?.applyMonitorNode(message.node);queueFleet();return}if(message.type==='log'){events.push(message.log);if(events.length>40)events.shift();renderLogs();return}if(message.type==='scan'){if(message.state==='started'){scanning=true;scan.disabled=true;scanAction.textContent='SWEEPING…';scanDesc.textContent=`Checking ${message.total} addresses`;progress.classList.add('active');progress.textContent=`Subnet discovery started · ${message.message}`}else if(message.state==='progress'){progress.textContent=`Subnet discovery · ${message.completed} of ${message.total} addresses checked`}else if(message.state==='complete'){scanning=false;scan.disabled=false;scanAction.textContent='RUN SUBNET SWEEP →';scanDesc.textContent=`${message.discovered} discovered terminal${message.discovered===1?'':'s'} tracked`;progress.classList.remove('active');progress.textContent=`Subnet sweep complete · ${message.total} addresses checked · ${message.discovered} discovered terminals tracked`;document.querySelector('#metric-discovery').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});showToast(`Subnet scan complete · ${message.discovered} discovered terminals`)}else if(message.state==='busy'||message.state==='cooldown'){scanning=false;scan.disabled=false;scanAction.textContent='RUN SUBNET SWEEP →';progress.classList.remove('active');progress.textContent=message.message;showToast(message.message)}return}if(message.type==='error')showToast(message.message||'Monitor command failed')}
-      function connect(){clearTimeout(retryTimer);const scheme=location.protocol==='https:'?'wss':'ws';socket=new WebSocket(`${scheme}://${location.host}/ws`);socket.addEventListener('open',()=>{setConnection(true);progress.classList.remove('active');progress.textContent='Connected · five backbone nodes are pinged every 5 seconds; subnet discovery runs every 60 seconds.'});socket.addEventListener('message',event=>{try{handleMessage(JSON.parse(event.data))}catch{showToast('The monitor sent an unreadable update.')}});socket.addEventListener('close',()=>{setConnection(false);retryTimer=setTimeout(connect,2500)});socket.addEventListener('error',()=>socket.close())}
-      scan.addEventListener('click',()=>{if(!socket||socket.readyState!==WebSocket.OPEN){showToast('The LAN scanner is unavailable. Start the Docker container on the network host.');return}if(scanning)return;socket.send(JSON.stringify({type:'scan-now'}));scan.disabled=true;scanAction.textContent='REQUESTING…'});
-      setConnection(false);connect();
+      function renderLogs(){const recent=events.slice(-10).reverse();logCount.textContent=`${events.length} EVENTS`;if(!recent.length){logPanel.innerHTML='<div class="log-empty">No scan events received yet.</div>';return}logPanel.innerHTML=recent.map(log=>`<div class="monitor-log ${safe(log.severity)}"><time>${safe(fmtTime(log.at))}</time><strong><span class="log-host">${safe(log.name)}${log.ip?` · ${safe(log.ip)}`:''}</span>${safe(log.message)}</strong></div>`).join('')}
+
+      // ── ship grid ──
+      function renderShipGrid(){shipGrid.replaceChildren();for(const s of SHIPS){const b=document.createElement('button');b.type='button';b.className='ship-card';b.style.setProperty('--c',s.color);b.innerHTML=`<span class="ship-icon" aria-hidden="true">${s.icon}</span><span class="ship-copy"><span class="ship-code mono">${s.code}</span><span class="ship-title">${s.name}</span><span class="ship-desc">${s.title} — ${s.desc}</span><span class="ship-cta mono">OPEN ${s.name.toUpperCase()} →</span></span>`;b.addEventListener('click',()=>openModal(s.id));shipGrid.append(b)}}
+
+      // ── modal ──
+      function openModal(id){const ship=SHIPS.find(s=>s.id===id);if(!ship)return;openShip=id;modalRoot.style.setProperty('--mc',ship.color);modalPanel.style.setProperty('--mc',ship.color);modalIcon.textContent=ship.icon;modalIcon.style.setProperty('--mc',ship.color);modalEyebrow.textContent=ship.code;modalTitle.textContent=ship.title;modalRoot.classList.add('open');modalRoot.setAttribute('aria-hidden','false');renderModalBody(id)}
+      function closeModal(){openShip=null;modalRoot.classList.remove('open');modalRoot.setAttribute('aria-hidden','true')}
+      modalRoot.addEventListener('click',e=>{if(e.target.hasAttribute('data-close'))closeModal()});
+      document.addEventListener('keydown',e=>{if(e.key==='Escape'&&openShip)closeModal()});
+
+      function renderModalBody(id){
+        if(id===1)modalBody.innerHTML=renderPortMatrix();
+        else if(id===2)modalBody.innerHTML=renderIpamGrid();
+        else if(id===3)renderWolPanel();
+        else if(id===4)modalBody.innerHTML=renderVendorList();
+        else if(id===5)modalBody.innerHTML=renderPerfPanel();
+        else if(id===6)modalBody.innerHTML=renderProxmoxPlexPanel();
+      }
+      function refreshOpenModal(){if(openShip)renderModalBody(openShip)}
+
+      // ── panel 1: port matrix ──
+      function renderPortMatrix(){
+        const m=T.portMatrix||{};
+        let head=`<tr><th class="label">SERVER POOL TARGET</th>${PORTS.map(p=>`<th>${p}</th>`).join('')}</tr>`;
+        let rows=PORT_TARGETS.map(ip=>{const entry=m[ip]||{label:PORT_LABELS[ip]||ip,ports:{}};return `<tr><td class="label">${safe(entry.label||PORT_LABELS[ip]||ip)}<small>${safe(ip)}</small></td>${PORTS.map(p=>{const cell=(entry.ports||{})[p];const cls=cell?cell.open?'open':'closed':'pending';const txt=cell?cell.open?'●':'×':'?';return `<td><span class="port-cell ${cls}">${txt}</span></td>`}).join('')}</tr>`}).join('');
+        return `<div class="panel-section-title mono"><span>TCP PORT MATRIX · 4 TARGETS × 6 PORTS</span><b>${Object.keys(m).length} TARGETS PROBED</b></div><div class="port-matrix"><table><thead>${head}</thead><tbody>${rows}</tbody></table></div><div class="panel-note" style="margin-top:12px">Green = port open · red = closed/refused · dashed = awaiting first probe. Updates live as the monitor completes each port sweep.</div>`;
+      }
+
+      // ── panel 2: ipam grid ──
+      function renderIpamGrid(){
+        const cells=[];for(let i=1;i<=254;i++){const ip=`192.168.4.${i}`;const host=knownHosts.get(ip);let cls='',tip=ip;if(host){cls=host.role==='anchor'?'anchor':statusName(host.status);tip=`${ip} · ${safe(host.name)}`}cells.push(`<div class="ipam-cell ${cls}">${i}${host?`<span class="ipam-tip">${safe(tip)}</span>`:''}</div>`)}
+        const active=[...knownHosts.values()].length;
+        return `<div class="panel-section-title mono"><span>IPAM SUBNET MAP · 192.168.4.0/24</span><b>${active} ACTIVE · ${254-active} FREE</b></div>
+        <div class="panel-grid">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);font:8px ui-monospace,monospace;letter-spacing:.08em"><span><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--pink);box-shadow:0 0 8px var(--pink);vertical-align:middle"></i> ANCHOR</span><span><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);vertical-align:middle"></i> ONLINE</span><span><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px var(--amber);vertical-align:middle"></i> DEGRADED</span><span><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red);vertical-align:middle"></i> OFFLINE</span></div>
+          <div class="ipam-grid" style="border:1px solid var(--border);border-radius:10px;background:#08080f">${cells.join('')}</div>
+          <button id="ipam-scan" class="btn-ignite" type="button" style="margin-top:4px;flex:0 0 auto">⟳ RUN SUBNET DISCOVERY SWEEP</button>
+        </div>
+        <div class="panel-note" style="margin-top:10px">Hover any cell to reveal the resolved host name. Click <b>RUN SUBNET DISCOVERY SWEEP</b> to re-probe 192.168.4.2–254 now.</div>`;
+      }
+
+      // ── panel 3: WoL ──
+      function renderWolPanel(){
+        const wolEvents=events.filter(e=>/wake-on-lan|wol/i.test(e.name||'')).slice(-6).reverse();
+        modalBody.innerHTML=`<div class="panel-section-title mono"><span>WAKE-ON-LAN REMOTE IGNITION</span><b>UDP PORT 9 · MAGIC PACKET</b></div>
+        <div class="wol-form">
+          <div class="wol-row">
+            <div class="wol-field"><label>TARGET MAC ADDRESS</label><input id="wol-mac" type="text" placeholder="00:1a:2b:3c:4d:5e" value="${safe('')}" autocomplete="off"></div>
+            <div class="wol-field"><label>BROADCAST ADDRESS</label><input id="wol-broadcast" type="text" value="192.168.4.255" autocomplete="off"></div>
+          </div>
+          <div class="wol-broadcast"><button id="wol-fire" class="btn-ignite" type="button">⚡ BROADCAST MAGIC PACKET</button></div>
+          <div class="panel-section-title mono" style="margin-top:6px"><span>RECENT IGNITION EVENTS</span><b>${wolEvents.length} LOGGED</b></div>
+          <div class="wol-events">${wolEvents.length?wolEvents.map(l=>`<div class="monitor-log ${safe(l.severity)}"><time>${safe(fmtTime(l.at))}</time><strong><span class="log-host">${safe(l.name)}</span>${safe(l.message)}</strong></div>`).join(''):'<div class="panel-note">No magic packets broadcast yet.</div>'}</div>
+        </div>`;
+        const fireBtn=modalBody.querySelector('#wol-fire');
+        fireBtn.addEventListener('click',async()=>{const mac=modalBody.querySelector('#wol-mac').value.trim();const broadcast=modalBody.querySelector('#wol-broadcast').value.trim();if(!mac){showToast('Enter a target MAC address to broadcast.');return}fireBtn.disabled=true;fireBtn.textContent='BROADCASTING…';try{const res=await fetch('/api/wol',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mac,broadcast:broadcast||'192.168.4.255'})});const data=await res.json().catch(()=>({}));if(res.ok&&data.ok){showToast(`Magic packet broadcast to ${mac} via ${broadcast||'192.168.4.255'}`)}else{showToast(`WoL failed: ${data.error||res.statusText}`)}}catch(e){showToast(`WoL request failed: ${e.message}`)}finally{fireBtn.disabled=false;fireBtn.textContent='⚡ BROADCAST MAGIC PACKET'}});
+      }
+
+      // ── panel 4: vendor list ──
+      const VENDOR_COLORS={Apple:'#c7c7d4',Intel:'#68e8ff',Sony:'#8b9bff',Nintendo:'#ff526d',VMware:'#b86ee8','Proxmox/Virtual':'#ff58cf','Xen/KVM':'#b86ee8','Raspberry Pi':'#39ff88','eero/Amazon':'#ffc857','T-Mobile':'ff58cf','TP-Link':'#68e8ff',Netgear:'#39ff88',Asus:'#ff526d',AsRock:'#ffc857',Realtek:'#39ff88','QEMU/KVM':'#b86ee8',LG:'#a0a0b8',TCL:'#68e8ff',Samsung:'#68e8ff','Philips Hue':'#ffc857','Onn/Roku':'#ff526d',Roku:'#ff526d'};
+      function renderVendorList(){
+        const rows=[...knownHosts.values()].filter(h=>h.macAddress&&h.macAddress!=='00:00:00:00:00:00').sort((a,b)=>(a.vendor||'Unknown').localeCompare(b.vendor||'Unknown'));
+        if(!rows.length)return`<div class="panel-note">No MAC addresses resolved yet. The monitor learns ARP neighbors during probe cycles.</div>`;
+        return`<div class="panel-section-title mono"><span>MAC HARDWARE VENDOR RESOLVER · OUI LOOKUP</span><b>${rows.length} DEVICES</b></div><div class="vendor-list">${rows.map(h=>{const v=h.vendor||'Unknown';const c=VENDOR_COLORS[v]||'#8c899d';return`<div class="vendor-row"><span class="vendor-badge" style="color:${c};border-color:${c}55;background:${c}1a">${safe(v)}</span><span class="vendor-name"><b>${safe(h.name)}</b><small>${safe(h.ip)} · ${statusName(h.status).toUpperCase()}</small></span><span class="vendor-mac">${safe(h.macAddress)}</span></div>`}).join('')}</div>`;
+      }
+
+      // ── panel 5: network performance ──
+      function renderPerfPanel(){
+        const wan=T.wan;const loss=Number.isFinite(wan.lossPct)?wan.lossPct:0;const stab=loss<=5?'ok':loss<=20?'warn':'bad';const stabLabel=loss<=5?'STABLE':loss<=20?'DEGRADED':'UNSTABLE';const stabColor=loss<=5?'var(--green)':loss<=20?'var(--amber)':'var(--red)';
+        const r=52,circ=2*Math.PI*r,offset=circ*(1-Math.min(loss,100)/100);
+        const hist=wan.history||[];const rtts=hist.map(h=>h.rttMs).filter(Number.isFinite);const maxR=Math.max(1,...rtts);
+        const chart=rtts.length>1?(()=>{const w=300,h=90,pad=4;const pts=rtts.map((v,i)=>`${pad+i*(w-2*pad)/(rtts.length-1)},${h-pad-(v/maxR)*(h-2*pad)}`).join(' ');return`<svg class="latency-chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="var(--cyan)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" style="filter:drop-shadow(0 0 4px var(--cyan))"/></svg>`})():'<div class="panel-note">No latency samples yet.</div>';
+        const dns=(T.dns||[]).map(d=>`<tr><td>${safe(d.domain)}</td><td style="color:${d.error?'var(--red)':'var(--green)'}">${d.error?'FAIL':(Number.isFinite(d.latencyMs)?d.latencyMs.toFixed(1):'—')} ms</td><td style="color:var(--muted)">${safe(d.resolved||d.error||'—')}</td></tr>`).join('')||'<tr><td colspan="3" style="color:var(--muted)">Awaiting DNS benchmark…</td></tr>';
+        const tp=(T.throughput.interfaces||[]).filter(i=>!/^lo$/.test(i.name));const maxBps=Math.max(1,...tp.flatMap(i=>[i.rxBps||0,i.txBps||0]));const tpBars=tp.length?tp.map(i=>`<div class="throughput-row"><div class="th-name"><span>${safe(i.name)}</span><span>${fmtBps(i.rxBps)} ↓ · ${fmtBps(i.txBps)} ↑</span></div><div class="bar-track"><div class="bar-fill" style="width:${((i.rxBps||0)/maxBps*100)}%;background:linear-gradient(90deg,var(--cyan),var(--green))"></div></div><div class="bar-track" style="margin-top:3px"><div class="bar-fill" style="width:${((i.txBps||0)/maxBps*100)}%;background:linear-gradient(90deg,var(--pink),var(--amber))"></div></div></div>`).join(''):'<div class="panel-note">No interface throughput telemetry.</div>';
+        return`<div class="perf-grid">
+          <div class="perf-card">
+            <div class="panel-section-title mono"><span>WAN / ISP STABILITY</span><b>PACKET LOSS</b></div>
+            <div class="gauge-wrap"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="${r}" stroke="#282637" stroke-width="8" fill="none"/><circle cx="60" cy="60" r="${r}" stroke="${stabColor}" stroke-width="8" fill="none" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" transform="rotate(-90 60 60)" stroke-linecap="round" style="filter:drop-shadow(0 0 6px ${stabColor})"/></svg><div class="gauge-center"><div class="gauge-value" style="color:${stabColor}">${loss.toFixed(1)}<small style="font-size:12px">%</small></div><div class="gauge-unit mono">PACKET LOSS</div></div></div>
+            <div style="text-align:center"><span class="stability-tag ${stab}">ISP STABILITY · ${stabLabel}</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;font:9px ui-monospace,monospace;color:var(--muted)"><span>RTT AVG: <b style="color:var(--text)">${Number.isFinite(wan.rttMs)?wan.rttMs.toFixed(1)+' ms':'—'}</b></span><span>TOTAL DROPS: <b style="color:var(--text)">${wan.totalDrops||0}</b></span><span>RTT MIN: <b style="color:var(--text)">${Number.isFinite(wan.rttMin)?wan.rttMin.toFixed(1)+' ms':'—'}</b></span><span>RTT MAX: <b style="color:var(--text)">${Number.isFinite(wan.rttMax)?wan.rttMax.toFixed(1)+' ms':'—'}</b></span></div>
+          </div>
+          <div class="perf-card">
+            <div class="panel-section-title mono"><span>REAL-TIME LATENCY</span><b>${rtts.length} SAMPLES</b></div>
+            ${chart}
+            <div style="margin-top:8px;color:var(--muted);font:8px ui-monospace,monospace;letter-spacing:.08em">Last ${Math.min(30,rtts.length)} WAN samples · 8.8.8.8 ICMP burst</div>
+          </div>
+          <div class="perf-card">
+            <div class="panel-section-title mono"><span>DNS RESOLUTION BENCHMARK</span><b>${(T.dns||[]).length} DOMAINS</b></div>
+            <table class="dns-table"><thead><tr><th>DOMAIN</th><th>LATENCY</th><th>RESOLVED</th></tr></thead><tbody>${dns}</tbody></table>
+          </div>
+          <div class="perf-card">
+            <div class="panel-section-title mono"><span>NETWORK THROUGHPUT</span><b>${tp.length} INTERFACES</b></div>
+            ${tpBars}
+          </div>
+        </div>`;
+      }
+
+      // ── panel 6: proxmox + plex ──
+      function renderProxmoxPlexPanel(){
+        const pve=T.proxmox;let pveHtml='';
+        if(!pve.configured){pveHtml=`<div class="panel-note">PROXMOX VE NOT CONFIGURED — set PVE_API_TOKEN in the container environment to enable hypervisor telemetry.</div>`}
+        else if(pve.error){pveHtml=`<div class="panel-note" style="border-color:#ff526d55;color:#ff9cab">Proxmox API error: ${safe(pve.error)}</div>`}
+        else{
+          const nodes=(pve.nodes||[]).map(n=>{const cpu=Number(n.cpu||0)*100,mem=n.maxmem?Number(n.mem||0)/n.maxmem*100:0;return`<div class="pve-node"><div class="pve-node-head"><span class="pve-node-name">${safe(n.node)}</span><span class="ct-badge ${n.status==='online'?'running':'exited'}">${safe((n.status||'—').toUpperCase())}</span></div><div class="ct-bar"><div class="ct-bar-label"><span>CPU</span><span>${cpu.toFixed(1)}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${cpu}%;background:var(--cyan)"></div></div></div><div class="ct-bar"><div class="ct-bar-label"><span>MEM</span><span>${fmtBytes(n.mem)}/${fmtBytes(n.maxmem)} · ${mem.toFixed(1)}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${mem}%;background:var(--green)"></div></div></div></div>`}).join('');
+          const vms=(pve.vms||[]).map(v=>{const mem=v.maxmem?Number(v.mem||0)/v.maxmem*100:0;const cpu=Number(v.cpu||0)*100;const dotColor=v.status==='running'?'var(--green)':v.status==='stopped'?'var(--red)':'var(--amber)';return`<div class="pve-vm"><span class="vm-dot" style="background:${dotColor};color:${dotColor}"></span><span style="flex:1;min-width:0"><div style="font-size:11px;font-weight:550;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${safe(v.name)} <small style="color:var(--muted);font:8px ui-monospace,monospace">VMID ${v.vmid||'?'}</small></div><div style="color:var(--muted);font:8px ui-monospace,monospace;margin-top:3px">CPU ${cpu.toFixed(1)}% · MEM ${mem.toFixed(1)}% · ${safe(v.node||'')}</div></span></div>`}).join('');
+          pveHtml=`<div class="panel-section-title mono"><span>PROXMOX VE NODES</span><b>${(pve.nodes||[]).length} NODES</b></div>${nodes||'<div class="panel-note">No cluster nodes reported.</div>'}<div class="panel-section-title mono" style="margin-top:14px"><span>VIRTUAL MACHINES</span><b>${(pve.vms||[]).length} VMs</b></div>${vms||'<div class="panel-note">No virtual machines reported.</div>'}`;
+        }
+        let plexHtml='';
+        const plex=T.plex;
+        if(!plex.configured){plexHtml=`<div class="panel-note">PLEX NOT CONFIGURED — set PLEX_TOKEN in the container environment to enable media session telemetry.</div>`}
+        else if(plex.error){plexHtml=`<div class="panel-note" style="border-color:#ff526d55;color:#ff9cab">Plex API error: ${safe(plex.error)}</div>`}
+        else{
+          const sessions=plex.sessions||[];
+          plexHtml=`<div class="panel-section-title mono"><span>PLEX ACTIVE STREAMS</span><b>${sessions.length} SESSION${sessions.length===1?'':'S'}</b></div>${sessions.length?`<div class="plex-sessions">${sessions.map(s=>`<div class="plex-card">${s.poster?`<img class="plex-poster" src="${safe(s.poster)}" alt="" loading="lazy" onerror="this.style.display='none'">`:`<div class="plex-poster" style="display:grid;place-items:center;color:var(--muted);font:8px ui-monospace,monospace">NO ART</div>`}<div class="plex-meta"><div class="plex-title">${safe(s.title||s.grandparentTitle||'Unknown')}</div><div class="plex-user">${safe(s.user||'—')} · ${safe((s.state||'').toUpperCase())}</div></div></div>`).join('')}</div>`:'<div class="panel-note">No active media streams.</div>'}`;
+        }
+        return`<div class="panel-grid"><div>${pveHtml}</div><div style="margin-top:14px">${plexHtml}</div></div>`;
+      }
+
+      // ── docker panel (always visible) ──
+      function renderDocker(){
+        if(T.dockerError&&T.docker.containers.length===0){dockerBody.innerHTML=`<div class="docker-notice">DOCKER SOCKET NOT MOUNTED — ${safe(T.dockerError)}. Mount /var/run/docker.sock into the container to enable engine control.</div>`;dockerMeta.textContent='SOCKET OFFLINE';return}
+        const containers=T.docker.containers||[];
+        if(!containers.length){dockerBody.innerHTML=`<div class="panel-note">No containers reported by the engine yet.</div>`;dockerMeta.textContent=T.docker.available?'0 CONTAINERS':'AWAITING ENGINE';return}
+        dockerMeta.textContent=`${containers.length} CONTAINER${containers.length===1?'':'S'}`;
+        dockerBody.innerHTML=`<div class="docker-grid">${containers.map(c=>{const state=c.state||'exited';const badge=state==='running'?'running':state==='paused'?'paused':'exited';const ports=(c.ports||[]).map(p=>`${p.IP?p.IP+':':''}${p.PublicPort?p.PublicPort+'->':''}${p.PrivatePort}`).join(' · ')||'none';return`<div class="container-card"><div class="ct-head"><div style="min-width:0"><div class="ct-name">${safe(c.name)}</div><div class="ct-image">${safe(c.image)} · ${safe(c.shortId)}</div></div><span class="ct-badge ${badge}">${safe((c.status||state).toUpperCase())}</span></div><div class="ct-bar"><div class="ct-bar-label"><span>CPU</span><span>${(c.cpuPct||0).toFixed(1)}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,c.cpuPct||0)}%;background:linear-gradient(90deg,var(--cyan),var(--green))"></div></div></div><div class="ct-bar"><div class="ct-bar-label"><span>MEM</span><span>${fmtBytes(c.memUsage)}/${fmtBytes(c.memLimit)} · ${(c.memPct||0).toFixed(1)}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,c.memPct||0)}%;background:linear-gradient(90deg,var(--pink),var(--amber))"></div></div></div><div class="ct-ports">PORTS · ${safe(ports)}</div><div class="ct-actions"><button class="ct-btn start" data-act="start" data-id="${safe(c.id)}">▶ START</button><button class="ct-btn stop" data-act="stop" data-id="${safe(c.id)}">■ STOP</button><button class="ct-btn restart" data-act="restart" data-id="${safe(c.id)}">↻ RESTART</button></div></div>`}).join('')}</div>`;
+        dockerBody.querySelectorAll('.ct-btn').forEach(btn=>btn.addEventListener('click',async()=>{const id=btn.dataset.id,act=btn.dataset.act;btn.disabled=true;const orig=btn.textContent;btn.textContent='…';try{const res=await fetch(`/api/docker/${id}/${act}`,{method:'POST'});const data=await res.json().catch(()=>({}));if(res.ok&&!data.error){showToast(`Container ${id.slice(0,8)} ${act} command sent`)}else{showToast(`${act} failed: ${data.error||res.statusText}`)}}catch(e){showToast(`${act} request failed: ${e.message}`)}finally{btn.disabled=false;btn.textContent=orig}}));
+      }
+
+      // ── github panel ──
+      function renderGithub(){
+        const gh=T.github||{};const commits=gh.commits||[];const evs=gh.events||[];
+        githubMeta.textContent=`${evs.length} EVENTS`;
+        githubSha.textContent=gh.latestSha?`HEAD · ${gh.latestSha}`:'—';
+        const feed=[];
+        for(const c of commits.slice(0,10))feed.push({at:c.at,type:'push',sha:c.sha,msg:c.message,actor:c.author,extra:c.ref||''});
+        for(const e of evs.slice(0,10)){const t=e.type==='PushEvent'?'push':e.type==='CreateEvent'?'create':e.type==='WatchEvent'?'watch':e.type==='IssueEvent'?'issue':'other';feed.push({at:e.created_at,type:t,sha:'',msg:`${safe(e.type)} on ${safe(e.repo||'')}`,actor:e.actor,extra:e.payload_action?`${e.payload_action}`:''})}
+        feed.sort((a,b)=>new Date(b.at)-new Date(a.at));
+        if(!feed.length){githubFeed.innerHTML='<div class="panel-note">No repository activity polled yet.</div>';return}
+        githubFeed.innerHTML=feed.slice(0,30).map(e=>`<div class="gh-entry"><span class="gh-time">${safe(fmtTime(e.at))}</span><span class="gh-type ${e.type}">${safe(e.type==='push'?'PUSH':e.type==='create'?'CREATE':e.type==='watch'?'WATCH':e.type==='issue'?'ISSUE':'EVENT')}</span><div class="gh-msg">${safe(e.msg)}<small>${safe(e.actor||'')}${e.extra?` · ${safe(e.extra)}`:''}</small></div>${e.sha?`<span class="gh-sha">${safe(e.sha)}</span>`:'<span></span>'}</div>`).join('');
+      }
+
+      // ── diagnostics ──
+      function renderSsl(){
+        const list=T.ssl||[];if(!list.length){sslList.innerHTML='<div class="panel-note">Awaiting certificate probe results…</div>';return}
+        sslList.innerHTML=list.map(c=>{const days=c.daysLeft;const danger=Number.isFinite(days)&&days<=30;const warn=Number.isFinite(days)&&days>30&&days<=60;const cls=danger?'danger':warn?'warn':'ok';const val=c.error?'ERROR':`${days}d`;return`<div class="diag-item ${cls}"><div class="di-top"><span class="di-name">${safe(c.host)}:${safe(c.port||443)}</span><span class="di-val">${safe(val)}</span></div><div class="di-meta">${c.error?safe(c.error):`${safe(c.issuer||'—')} · ${safe(c.subject||'—')}`}</div></div>`}).join('');
+      }
+      function renderSmart(){
+        const list=T.smart||[];if(!list.length){smartList.innerHTML='<div class="panel-note">No SMART drives detected. smartctl may be unavailable or /dev not mounted.</div>';return}
+        smartList.innerHTML=list.map(d=>{const bad=d.badSectors||0;const danger=d.health==='failing'||bad>0;const warn=Number.isFinite(d.temp)&&d.temp>=45;const cls=danger?'danger':warn?'warn':'ok';return`<div class="diag-item ${cls}"><div class="di-top"><span class="di-name">${safe(d.device)} · ${safe(d.model)}</span><span class="di-val">${d.health==='healthy'?'HEALTHY':d.health==='failing'?'FAILING':safe((d.health||'—').toUpperCase())}</span></div><div class="di-meta">${Number.isFinite(d.temp)?`${d.temp}°C · `:''}reallocated ${d.reallocated||0} · spin retry ${d.spinRetry||0} · bad sectors ${bad}</div></div>`}).join('');
+      }
+      function renderWeather(){
+        const w=T.weather;if(!w||w.temp===null&&w.temp!==0){weatherBody.innerHTML='<div class="panel-note">Awaiting atmospheric telemetry from Open-Meteo…</div>';return}
+        weatherBody.innerHTML=`<div class="weather-grid"><div class="weather-stat"><div class="ws-label mono">TEMP</div><div class="ws-val">${w.temp===null||w.temp===undefined?'—':`${Number(w.temp).toFixed(1)}°`}</div></div><div class="weather-stat"><div class="ws-label mono">PRESSURE</div><div class="ws-val">${Number.isFinite(w.pressure)?Math.round(w.pressure):'—'}</div></div><div class="weather-stat"><div class="ws-label mono">HUMIDITY</div><div class="ws-val">${Number.isFinite(w.humidity)?Math.round(w.humidity):'—'}%</div></div><div class="weather-stat"><div class="ws-label mono">WIND</div><div class="ws-val">${Number.isFinite(w.wind)?Math.round(w.wind):'—'}</div></div></div><div style="margin-top:10px;padding:10px 11px;border:1px solid var(--border);border-radius:8px;background:#08080f;font:10px ui-monospace,monospace;color:var(--text)">${safe(w.conditions||'Unknown')}${w.code!=null?` · code ${safe(w.code)}`:''}</div>${w.storms?'<div class="weather-storm">⚠ STORM ADVISORY — THUNDERSTORM ACTIVITY DETECTED</div>':''}`;
+      }
+
+      // ── plex hologram ──
+      function renderPlexHolo(){
+        const plex=T.plex;if(plex&&plex.configured&&(plex.activeStreams||0)>0){const s=plex.sessions&&plex.sessions[0];const poster=s&&s.poster;const title=s&&(s.title||s.grandparentTitle)||'Active stream';if(poster){plexHoloPoster.src=poster;plexHoloPoster.style.display='block';}else{plexHoloPoster.removeAttribute('src');plexHoloPoster.style.display='none'}plexHoloTitle.textContent=title;plexHolo.classList.add('active');plexHolo.setAttribute('aria-hidden','false')}else{plexHolo.classList.remove('active');plexHolo.setAttribute('aria-hidden','true')}
+      }
+
+      // ── message router ──
+      function handleMessage(message){
+        const t=message.type;
+        if(t==='snapshot'){
+          knownHosts.clear();(message.nodes||[]).forEach(h=>knownHosts.set(h.ip,h));window.neonMeshMonitor?.applyMonitorSnapshot(message);events.splice(0,events.length,...(message.logs||[]));renderLogs();queueFleet();updateSummary();
+          const done=message.lastDiscoveryCompletedAt;if(done){$('metric-discovery').textContent=new Date(done).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});$('metric-discovery-detail').textContent=`${message.discoveryIntervalMs/1000}s discovery interval`}
+          if(message.wan){T.wan.lossPct=message.wan.lossPct;T.wan.rttMs=message.wan.rttMs;T.wan.totalDrops=message.wan.totalDrops||message.wan.drops||T.wan.totalDrops}
+          if(message.docker)T.docker.available=message.docker.available;
+          if(message.weather){T.weather=message.weather;renderWeather()}
+          refreshOpenModal();renderWeather();renderPlexHolo();return;
+        }
+        if(t==='node'){knownHosts.set(message.node.ip,message.node);window.neonMeshMonitor?.applyMonitorNode(message.node);queueFleet();refreshOpenModal();return}
+        if(t==='log'){events.push(message.log);if(events.length>60)events.shift();renderLogs();if(openShip===3)renderModalBody(3);return}
+        if(t==='scan'){
+          if(message.state==='started'){scanning=true;progress.classList.add('active');progress.textContent=`Subnet discovery started · ${safe(message.message)}`}
+          else if(message.state==='progress'){progress.textContent=`Subnet discovery · ${message.completed} of ${message.total} addresses checked`}
+          else if(message.state==='complete'){scanning=false;progress.classList.remove('active');progress.textContent=`Subnet sweep complete · ${message.total} addresses checked · ${message.discovered} discovered terminals tracked`;$('metric-discovery').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});showToast(`Subnet scan complete · ${message.discovered} discovered terminals`)}
+          else if(message.state==='busy'||message.state==='cooldown'){scanning=false;progress.classList.remove('active');progress.textContent=message.message;showToast(message.message)}
+          const btn=$('ipam-scan');if(btn){btn.disabled=scanning;btn.textContent=scanning?'⟳ SWEEPING…':'⟳ RUN SUBNET DISCOVERY SWEEP'}
+          return;
+        }
+        if(t==='port-check')return;
+        if(t==='port-matrix'){T.portMatrix=message.matrix||{};refreshOpenModal();return}
+        if(t==='wan'){const w=message.wan||{};T.wan.lossPct=w.lossPct;T.wan.rttMs=w.rttMs;T.wan.rttMin=w.rttMin;T.wan.rttMax=w.rttMax;T.wan.totalDrops=w.totalDrops||w.drops||T.wan.totalDrops;T.wan.history=w.history||[];if(openShip===5)renderModalBody(5);return}
+        if(t==='ssl'){T.ssl=message.ssl||[];renderSsl();return}
+        if(t==='dns'){T.dns=message.dns||[];if(openShip===5)renderModalBody(5);return}
+        if(t==='docker'){T.docker=message.docker||{};T.dockerError=null;renderDocker();return}
+        if(t==='docker-status'){T.dockerError=message.available?null:message.error;renderDocker();return}
+        if(t==='github'){T.github=message.github||{};renderGithub();return}
+        if(t==='smart'){T.smart=message.smart||[];renderSmart();return}
+        if(t==='plex'){T.plex=message.plex||{};renderPlexHolo();if(openShip===6)renderModalBody(6);return}
+        if(t==='proxmox'){T.proxmox=message.proxmox||{};if(openShip===6)renderModalBody(6);return}
+        if(t==='throughput'){T.throughput=message.throughput||{};if(openShip===5)renderModalBody(5);return}
+        if(t==='weather'){T.weather=message.weather;renderWeather();return}
+        if(t==='error')showToast(message.message||'Monitor command failed');
+      }
+
+      function connect(){clearTimeout(retryTimer);setConnection(false,true);const scheme=location.protocol==='https:'?'wss':'ws';socket=new WebSocket(`${scheme}://${location.host}/ws`);socket.addEventListener('open',()=>{setConnection(true);progress.classList.remove('active');progress.textContent='Connected · five backbone nodes pinged every 5 seconds; subnet discovery runs every 60 seconds.'});socket.addEventListener('message',event=>{try{handleMessage(JSON.parse(event.data))}catch{showToast('The monitor sent an unreadable update.')}});socket.addEventListener('close',()=>{setConnection(false);retryTimer=setTimeout(connect,2500)});socket.addEventListener('error',()=>socket.close())}
+
+      function requestScan(){if(!socket||socket.readyState!==WebSocket.OPEN){showToast('The LAN scanner is unavailable. Start the Docker container on the network host.');return}if(scanning)return;socket.send(JSON.stringify({type:'scan-now'}));const btn=$('ipam-scan');if(btn){btn.disabled=true;btn.textContent='⟳ REQUESTING…'}}
+
+      // wire delegated scan button (inside ipam modal which re-renders)
+      shipGrid.addEventListener('click',e=>{});
+      document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#ipam-scan');if(b)requestScan()});
+
+      renderShipGrid();renderDocker();renderGithub();renderSsl();renderSmart();renderWeather();renderPlexHolo();
+      setConnection(false,true);connect();
     })();
   </script>
 </body>

@@ -7,31 +7,21 @@ type HealthStatus = 'healthy' | 'degraded' | 'offline'
 type FleetScan = { checked: number; counts: Record<HealthStatus, number>; at: string }
 type NodeData = { id: string; x: number; y: number; vx: number; vy: number; anchorX: number; anchorY: number; color: string; radius: number; kind: string; health: HealthStatus }
 
+const anchorIps: Record<string, string> = {
+  'Gateway eero Router': '192.168.4.1',
+  'Homarr Cockpit Portal': '192.168.4.33',
+  'Docker Host Engine': '192.168.4.48',
+  'Chronos-05 Plex Vault': '192.168.4.49',
+  'Proxmox VE Hypervisor': '192.168.4.200',
+}
 const links: LinkData[] = [
-  { source: 'T-Mobile Main Router', destination: 'T-Mobile Mesh Router', color: '#FF007F' },
-  { source: 'T-Mobile Main Router', destination: 'Node pve', color: '#FF007F' },
-  { source: 'T-Mobile Main Router', destination: 'Wife iMac', color: '#ffffff' },
-  { source: 'T-Mobile Main Router', destination: 'Wife Laptop 1', color: '#ffffff' },
-  { source: 'T-Mobile Main Router', destination: 'Wife Laptop 2', color: '#ffffff' },
-  { source: 'T-Mobile Main Router', destination: 'Main TV 1 (LG OLED 55)', color: '#39FF14' },
-  { source: 'T-Mobile Main Router', destination: 'Main TV 2 (TCL 65 inch)', color: '#39FF14' },
-  { source: 'T-Mobile Mesh Router', destination: 'Wife iPhone 16 Pro Max', color: '#A0A0A0' },
-  { source: 'T-Mobile Mesh Router', destination: 'My iPad', color: '#A0A0A0' },
-  { source: 'T-Mobile Mesh Router', destination: 'ROG Ally X', color: '#00FF00' },
-  { source: 'T-Mobile Mesh Router', destination: 'Legion Go S', color: '#00FF00' },
-  { source: 'T-Mobile Mesh Router', destination: 'Mesh TV 3 (65 Onn TV)', color: '#39FF14' },
-  { source: 'Node pve', destination: 'Tailscale Virtual Network', color: '#4A90E2' },
-  { source: 'Tailscale Virtual Network', destination: '100 (plex)', color: '#0000FF' },
-  { source: 'Tailscale Virtual Network', destination: '101 (docker)', color: '#00FF00' },
-  { source: 'Tailscale Virtual Network', destination: '102 (homarr)', color: '#FF00FF' },
-  { source: 'Tailscale Virtual Network', destination: '103 (cloudflared)', color: '#FFA500' },
-  { source: 'Tailscale Virtual Network', destination: '9800X3D Gaming PC', color: '#FFFF00' },
-  { source: 'Tailscale Virtual Network', destination: 'My Laptop', color: '#ffffff' },
-  { source: 'Tailscale Virtual Network', destination: 'S25 Ultra Phone', color: '#A0A0A0' },
-  { source: 'Node pve', destination: 'Storage Vault Z Drive', color: '#00FFFF' },
+  { source: 'Gateway eero Router', destination: 'Proxmox VE Hypervisor', color: '#FF007F' },
+  { source: 'Proxmox VE Hypervisor', destination: 'Homarr Cockpit Portal', color: '#4A90E2' },
+  { source: 'Proxmox VE Hypervisor', destination: 'Docker Host Engine', color: '#39FF14' },
+  { source: 'Docker Host Engine', destination: 'Chronos-05 Plex Vault', color: '#00FFFF' },
 ]
 const names = [...new Set(links.flatMap(link => [link.source, link.destination]))]
-const healthOverrides: Record<string, HealthStatus> = { 'Node pve': 'degraded', '101 (docker)': 'degraded', 'Storage Vault Z Drive': 'offline' }
+const healthOverrides: Record<string, HealthStatus> = {}
 const healthFor = (name: string): HealthStatus => healthOverrides[name] ?? 'healthy'
 const healthCounts = names.reduce<Record<HealthStatus, number>>((counts, name) => { counts[healthFor(name)] += 1; return counts }, { healthy: 0, degraded: 0, offline: 0 })
 const healthStyles: Record<HealthStatus, { label: string; text: string; dot: string; border: string; surface: string }> = {
@@ -39,11 +29,13 @@ const healthStyles: Record<HealthStatus, { label: string; text: string; dot: str
   degraded: { label: 'Degraded', text: 'text-amber-200', dot: '#FFC857', border: 'border-amber-300/25', surface: 'bg-amber-300/[0.07]' },
   offline: { label: 'Offline', text: 'text-rose-300', dot: '#FF526D', border: 'border-rose-400/25', surface: 'bg-rose-400/[0.07]' },
 }
-const getKind = (name: string) => /router/i.test(name) ? 'Router' : /tv|oled/i.test(name) ? 'Display' : /phone|iphone/i.test(name) ? 'Mobile device' : /laptop|imac|ipad|pc|ally|legion/i.test(name) ? 'Personal device' : /network/i.test(name) ? 'Virtual network' : /vault|storage/i.test(name) ? 'Storage' : /plex|docker|homarr|cloudflared/i.test(name) ? 'Service' : 'Compute node'
-const iconFor = (kind: string): React.ReactNode => kind === 'Router' ? <Router /> : kind === 'Display' ? <Monitor /> : kind === 'Mobile device' ? <Smartphone /> : kind === 'Storage' ? <HardDrive /> : kind === 'Service' || kind === 'Compute node' ? <Cpu /> : <Laptop />
+const getKind = (name: string) => /router|eero/i.test(name) ? 'Router' : /hypervisor|proxmox/i.test(name) ? 'Hypervisor' : /homarr|cockpit/i.test(name) ? 'Dashboard service' : /docker/i.test(name) ? 'Container host' : /plex|vault/i.test(name) ? 'Media server' : 'Discovered terminal'
+const iconFor = (kind: string): React.ReactNode => kind === 'Router' ? <Router /> : kind === 'Hypervisor' ? <Cpu /> : kind === 'Dashboard service' ? <Monitor /> : kind === 'Container host' ? <Cpu /> : kind === 'Media server' ? <HardDrive /> : <Laptop />
+const anchorPorts: Record<string, number[]> = { 'Proxmox VE Hypervisor': [8006], 'Homarr Cockpit Portal': [7575], 'Chronos-05 Plex Vault': [32400] }
 const getStats = (name: string) => {
-  const seed = [...name].reduce((sum, char) => sum + char.charCodeAt(0), 0)
-  return { down: (82 + seed % 780).toFixed(1), up: (18 + seed % 184).toFixed(1), uptime: `${31 + seed % 66}d ${String(seed % 24).padStart(2, '0')}h ${String(seed % 60).padStart(2, '0')}m`, packets: (18420 + seed * 317).toLocaleString() }
+  const ip = anchorIps[name] || '192.168.4.?'
+  const ports = anchorPorts[name] || []
+  return { ip, down: '—', up: '—', uptime: 'LIVE MONITOR', packets: ports.length ? `PORTS ${ports.join(',')}` : 'ICMP PROBE' }
 }
 
 export const Route = createFileRoute('/')({
@@ -52,7 +44,7 @@ export const Route = createFileRoute('/')({
 })
 
 function NetworkDashboard() {
-  const [selected, setSelected] = useState<string | null>('T-Mobile Main Router')
+  const [selected, setSelected] = useState<string | null>('Gateway eero Router')
   const [beamSpeed, setBeamSpeed] = useState(1)
   const [isScanning, setIsScanning] = useState(false)
   const [lastScan, setLastScan] = useState<FleetScan | null>(null)
@@ -79,12 +71,12 @@ function NetworkDashboard() {
           <div><div className="font-semibold tracking-tight">NEON<span className="text-primary">SPACE</span></div><div className="font-mono text-[9px] tracking-[0.24em] text-muted-foreground">NETWORK OBSERVATORY</div></div>
         </div>
         <div className="hidden items-center gap-2 rounded-full border border-border/80 bg-card/70 px-3 py-1.5 sm:flex"><span className="size-1.5 animate-pulse rounded-full bg-amber-300 shadow-[0_0_8px_#ffc857]"/><span className="font-mono text-[9px] tracking-[0.12em] text-foreground">{healthCounts.healthy} HEALTHY</span><span className="font-mono text-[9px] tracking-[0.12em] text-amber-200">{healthCounts.degraded} DEGRADED</span><span className="font-mono text-[9px] tracking-[0.12em] text-rose-300">{healthCounts.offline} OFFLINE</span></div>
-        <div className="flex items-center gap-3 font-mono text-[10px] text-muted-foreground"><span className="hidden md:inline">LOCAL GRID / 01</span><span className="text-border">|</span><span className="text-foreground">21 LINKS</span></div>
+        <div className="flex items-center gap-3 font-mono text-[10px] text-muted-foreground"><span className="hidden md:inline">LOCAL GRID / 01</span><span className="text-border">|</span><span className="text-foreground">{links.length} CORE LINKS</span></div>
       </header>
 
       <div className="px-4 pb-7 pt-7 md:px-9 md:pt-9">
         <div className="mb-6 flex flex-col justify-between gap-5 xl:flex-row xl:items-end">
-          <div><div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-primary"><span className="h-px w-6 bg-primary"/>Live topology</div><h1 className="text-3xl font-medium tracking-tight md:text-[40px]">Your network, <span className="text-muted-foreground">in orbit.</span></h1><p className="mt-2 max-w-xl text-sm text-muted-foreground">A live field view of every connected device, service, and route in your private network.</p></div>
+          <div><div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-primary"><span className="h-px w-6 bg-primary"/>Live topology</div><h1 className="text-3xl font-medium tracking-tight md:text-[40px]">Your network, <span className="text-muted-foreground">in orbit.</span></h1><p className="mt-2 max-w-xl text-sm text-muted-foreground">A live field view of your 192.168.4.0/24 infrastructure — every anchor, service, and discovered terminal, scanned locally every 10 seconds.</p></div>
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
             <Metric label="NODES" value={String(names.length).padStart(2, '0')} detail="active endpoints" />
             <Metric label="THROUGHPUT" value="842.6" unit="Mbps" detail="aggregate flow" />
@@ -98,7 +90,7 @@ function NetworkDashboard() {
             <div className="pointer-events-none absolute left-5 top-5 z-10 flex items-center gap-2 rounded-md border border-border/70 bg-background/70 px-2.5 py-1.5 font-mono text-[9px] tracking-[0.13em] text-muted-foreground backdrop-blur"><CircleDot size={11} className="text-primary"/> TOPOLOGY FIELD <span className="text-border">/</span> DRAG TO REPOSITION</div>
             <div className="absolute right-4 top-4 z-10 flex flex-col items-end gap-2 sm:right-5 sm:flex-row sm:items-center sm:gap-4">
               <BeamSpeedControl value={beamSpeed} onChange={setBeamSpeed} />
-              <div className="flex items-center gap-1.5 font-mono text-[8px] tracking-[0.09em] text-amber-100/80"><span className="size-1.5 rounded-full bg-amber-300 shadow-[0_0_8px_#ffc857]"/> SAMPLE</div>
+              <div className="flex items-center gap-1.5 font-mono text-[8px] tracking-[0.09em] text-emerald-300/80"><span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#39ff88]"/> LIVE</div>
             </div>
             <NetworkCanvas selected={selected} onSelect={selectNode} beamSpeed={beamSpeed} />
             <div className="pointer-events-none absolute bottom-4 left-5 z-10 flex flex-wrap gap-x-4 gap-y-2 font-mono text-[9px] text-muted-foreground">
@@ -112,14 +104,17 @@ function NetworkDashboard() {
           </aside>
         </div>
         <section className="mt-4" aria-labelledby="stations-heading">
-          <div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><div className="flex items-center gap-2 font-mono text-[9px] tracking-[0.18em] text-primary"><Orbit size={12}/> ORBITAL STATIONS</div><h2 id="stations-heading" className="mt-1 text-sm font-medium">Fleet command deck</h2></div><span className="font-mono text-[8px] tracking-[0.1em] text-muted-foreground">LOCAL SAMPLE SIMULATION</span></div>
-          <div className="grid gap-2.5 md:grid-cols-3">
-            <StationCard ship="courier" codename="NEXUS · 01" title="Core uplink" description="Inspect the main router" action="OPEN ROUTER" onClick={() => selectNode('T-Mobile Main Router')} />
-            <StationCard ship="relay" codename="MIRAGE · 02" title="Mesh relay" description="Inspect mesh coverage" action="OPEN MESH" onClick={() => selectNode('T-Mobile Mesh Router')} />
-            <StationCard ship="carrier" codename="ATLAS · 03" title="Fleet diagnostics" description={lastScan ? `${lastScan.checked} checked · ${lastScan.counts.healthy} healthy · ${lastScan.counts.degraded} degraded · ${lastScan.counts.offline} offline · ${lastScan.at}` : `Run a sample health check on all ${names.length} devices`} action={isScanning ? 'SCANNING…' : lastScan ? 'SCAN AGAIN' : 'RUN FLEET SCAN'} onClick={runFleetScan} busy={isScanning} />
+          <div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><div className="flex items-center gap-2 font-mono text-[9px] tracking-[0.18em] text-primary"><Orbit size={12}/> ORBITAL STATIONS</div><h2 id="stations-heading" className="mt-1 text-sm font-medium">Fleet command deck</h2></div><span className="font-mono text-[8px] tracking-[0.1em] text-muted-foreground">6-SHIP FLEET · DOCKER-DEPLOYED</span></div>
+          <div className="grid gap-2.5 sm:grid-cols-2 md:grid-cols-3">
+            <StationCard ship="courier" codename="DREADNOUGHT · 01" title="Port Scanner Matrix" description="Live open-port checks (22, 80, 8006, 32400)" action="OPEN SCANNER" onClick={() => selectNode('Proxmox VE Hypervisor')} />
+            <StationCard ship="relay" codename="RECON · 02" title="IPAM Subnet Grid" description="192.168.4.X address allocation map" action="OPEN IPAM" onClick={() => selectNode('Homarr Cockpit Portal')} />
+            <StationCard ship="carrier" codename="INTERCEPTOR · 03" title="Wake-on-LAN Ignition" description="Broadcast magic packet to gaming PC" action="OPEN WOL" onClick={() => selectNode('Docker Host Engine')} />
+            <StationCard ship="courier" codename="LEVIATHAN · 04" title="MAC Vendor Resolver" description="Identify device hardware manufacturers" action="OPEN RESOLVER" onClick={() => selectNode('Chronos-05 Plex Vault')} />
+            <StationCard ship="relay" codename="VANGUARD · 05" title="Network Performance" description="Latency, throughput, ISP stability dial" action="OPEN METRICS" onClick={runFleetScan} busy={isScanning} />
+            <StationCard ship="carrier" codename="SENTINEL · 06" title="Proxmox & Plex Telemetry" description="Cluster workloads, streaming sessions" action="OPEN TELEMETRY" onClick={() => selectNode('Proxmox VE Hypervisor')} />
           </div>
         </section>
-        <footer className="mt-4 flex flex-wrap items-center justify-between gap-2 px-1 font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground"><span>Sample health states · not connected to live devices</span><span className="flex items-center gap-2"><Shield size={11} className="text-primary/70"/> Encrypted topology view</span></footer>
+        <footer className="mt-4 flex flex-wrap items-center justify-between gap-2 px-1 font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground"><span>Deploy via Docker · local network 192.168.4.0/24 · no cloud dependency</span><span className="flex items-center gap-2"><Shield size={11} className="text-primary/70"/> 100% local operations</span></footer>
       </div>
     </main>
   )
@@ -191,10 +186,10 @@ function Inspector({ name, kind, stats, health, onClose }: { name: string; kind:
   return <div className="flex h-full min-h-[540px] flex-col animate-fade-in">
     <div className="flex items-center justify-between border-b border-border/70 px-5 py-4"><div className="flex items-center gap-2 font-mono text-[9px] tracking-[0.17em] text-muted-foreground"><span className="size-1.5 animate-pulse rounded-full" style={{ backgroundColor: statusStyle.dot, boxShadow: `0 0 8px ${statusStyle.dot}` }}/> ENDPOINT INSPECTOR</div><button onClick={onClose} aria-label="Close endpoint inspector" className="rounded-md p-1.5 text-muted-foreground transition hover:bg-secondary hover:text-foreground"><X size={15}/></button></div>
     <div className="flex-1 px-5 py-5">
-      <div className="flex items-start gap-3"><div className="grid size-11 shrink-0 place-items-center rounded-xl border border-primary/25 bg-primary/10 text-primary">{iconFor(kind)}</div><div className="min-w-0 flex-1"><h2 className="break-words text-[15px] font-medium leading-5">{name}</h2><p className="mt-1 font-mono text-[9px] uppercase tracking-[0.13em] text-muted-foreground">{kind} <span className="px-1 text-border">·</span> 192.168.1.{(seed % 200) + 20}</p></div><ChevronRight size={15} className="mt-1 text-muted-foreground"/></div>
+      <div className="flex items-start gap-3"><div className="grid size-11 shrink-0 place-items-center rounded-xl border border-primary/25 bg-primary/10 text-primary">{iconFor(kind)}</div><div className="min-w-0 flex-1"><h2 className="break-words text-[15px] font-medium leading-5">{name}</h2><p className="mt-1 font-mono text-[9px] uppercase tracking-[0.13em] text-muted-foreground">{kind} <span className="px-1 text-border">·</span> {stats.ip}</p></div><ChevronRight size={15} className="mt-1 text-muted-foreground"/></div>
       <div className={`mt-4 flex items-center justify-between rounded-lg border px-3 py-2.5 ${statusStyle.border} ${statusStyle.surface}`}><span className="font-mono text-[9px] tracking-[0.11em] text-muted-foreground">DEVICE HEALTH</span><span className={`flex items-center gap-1.5 font-mono text-[9px] ${statusStyle.text}`}><StatusIcon size={12}/>{statusStyle.label.toUpperCase()}</span></div>
       <div className="mt-6 grid grid-cols-2 gap-2.5"><Telemetry label="DOWNLOAD" value={stats.down} unit="Mbps" icon={<ArrowDown size={12}/>} color="text-cyan-300"/><Telemetry label="UPLOAD" value={stats.up} unit="Mbps" icon={<ArrowUp size={12}/>} color="text-primary"/><Telemetry label="UPTIME" value={stats.uptime} unit="" icon={<Activity size={12}/>} color="text-emerald-300"/><Telemetry label="PACKETS RX" value={stats.packets} unit="" icon={<Cpu size={12}/>} color="text-amber-200"/></div>
-      <div className="mt-6"><div className="mb-3 flex items-center justify-between"><h3 className="font-mono text-[9px] tracking-[0.16em] text-muted-foreground">PACKET STREAM</h3><span className="rounded border border-amber-300/20 bg-amber-300/[0.06] px-1.5 py-0.5 font-mono text-[8px] text-amber-100">SAMPLE</span></div><div className="overflow-hidden rounded-lg border border-border/70 bg-background/70">{logs.map((log, index) => <div key={log.time} className={`flex items-start gap-2.5 px-3 py-3 ${index > 0 ? 'border-t border-border/50' : ''}`}><span className="w-8 shrink-0 pt-0.5 font-mono text-[8px] text-muted-foreground">{log.time}</span><span className={`mt-0.5 shrink-0 rounded px-1 font-mono text-[7px] ${log.type === 'OK' ? 'bg-emerald-400/10 text-emerald-300' : log.type === 'WARN' ? 'bg-amber-300/10 text-amber-200' : 'bg-primary/10 text-primary'}`}>{log.type}</span><span className="text-[10px] leading-4 text-foreground/75">{log.event}</span></div>)}</div></div>
+      <div className="mt-6"><div className="mb-3 flex items-center justify-between"><h3 className="font-mono text-[9px] tracking-[0.16em] text-muted-foreground">PACKET STREAM</h3><span className="rounded border border-emerald-400/20 bg-emerald-400/[0.06] px-1.5 py-0.5 font-mono text-[8px] text-emerald-300">LIVE</span></div><div className="overflow-hidden rounded-lg border border-border/70 bg-background/70">{logs.map((log, index) => <div key={log.time} className={`flex items-start gap-2.5 px-3 py-3 ${index > 0 ? 'border-t border-border/50' : ''}`}><span className="w-8 shrink-0 pt-0.5 font-mono text-[8px] text-muted-foreground">{log.time}</span><span className={`mt-0.5 shrink-0 rounded px-1 font-mono text-[7px] ${log.type === 'OK' ? 'bg-emerald-400/10 text-emerald-300' : log.type === 'WARN' ? 'bg-amber-300/10 text-amber-200' : 'bg-primary/10 text-primary'}`}>{log.type}</span><span className="text-[10px] leading-4 text-foreground/75">{log.event}</span></div>)}</div></div>
       <div className={`mt-5 flex items-center justify-between rounded-lg border px-3 py-2.5 ${statusStyle.border} ${statusStyle.surface}`}><span className="font-mono text-[9px] tracking-[0.11em] text-muted-foreground">LINK STATE</span><span className={`flex items-center gap-1.5 font-mono text-[9px] ${statusStyle.text}`}><StatusIcon size={11}/>{statusStyle.label.toUpperCase()}</span></div>
     </div>
     <div className="border-t border-border/70 px-5 py-3 font-mono text-[8px] tracking-[0.12em] text-muted-foreground">SIGNAL LOCKED <span className="px-1 text-border">/</span> ENCRYPTED</div>
@@ -241,7 +236,7 @@ function NetworkCanvas({ selected, onSelect, beamSpeed }: { selected: string | n
       context.restore(); context.globalAlpha = 0.17; context.beginPath(); context.ellipse(x, y, r * 2.05, r * 0.65, -0.28, Math.PI * 1.08, Math.PI * 1.92); context.strokeStyle = planet.ring; context.stroke(); context.restore()
     }
     const anchors = (name: string, index: number) => {
-      const group = /T-Mobile Main/i.test(name) ? [0.42, 0.47] : /T-Mobile Mesh/i.test(name) ? [0.26, 0.55] : /Node pve/i.test(name) ? [0.59, 0.36] : /Tailscale/i.test(name) ? [0.69, 0.56] : /plex|docker|homarr|cloudflared/i.test(name) ? [0.85, 0.47] : /Storage Vault/i.test(name) ? [0.72, 0.82] : /Gaming PC|My Laptop|S25/i.test(name) ? [0.87, 0.72] : /TV/i.test(name) ? [0.1 + (index % 3) * 0.06, 0.18 + (index % 3) * 0.17] : /iPhone|iPad|ROG|Legion/i.test(name) ? [0.1 + (index % 4) * 0.04, 0.76 + (index % 2) * 0.08] : [0.3 + (index % 3) * 0.08, 0.82]
+      const group = /Gateway/i.test(name) ? [0.16, 0.50] : /Proxmox/i.test(name) ? [0.40, 0.50] : /Homarr/i.test(name) ? [0.64, 0.28] : /Docker/i.test(name) ? [0.64, 0.72] : /Plex|Vault/i.test(name) ? [0.84, 0.72] : [0.30 + (index % 5) * 0.12, 0.85]
       return { x: group[0] * width, y: group[1] * height }
     }
     const resize = () => {

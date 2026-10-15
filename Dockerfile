@@ -1,14 +1,14 @@
 # Build the single-file site from its source using only Node's built-in modules.
-# No npm install, Vite, React, or local development server is needed.
 FROM node:22-alpine AS static-build
 WORKDIR /site
 COPY public/standalone.html public/standalone.html
 COPY scripts/build-static.mjs scripts/build-static.mjs
 RUN node scripts/build-static.mjs
 
-# The runtime includes the Node monitor, Nginx, and ICMP tools.
+# The runtime includes the Node monitor, Nginx, ICMP tools, curl (Docker socket +
+# SSL checks), and smartmontools (drive health).
 FROM node:22-alpine AS runtime
-RUN apk add --no-cache nginx iputils && mkdir -p /run/nginx
+RUN apk add --no-cache nginx iputils curl smartmontools && mkdir -p /run/nginx
 WORKDIR /app
 
 COPY --from=static-build /site/dist/ /usr/share/nginx/html/
