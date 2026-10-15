@@ -20,6 +20,7 @@ const logs = []
 let anchorCycleRunning = false
 let discoveryRunning = false
 let lastDiscoveryAt = 0
+let lastDiscoveryCompletedAt = null
 
 function frame(value, opcode = 0x1) {
   const payload = Buffer.isBuffer(value) ? value : Buffer.from(value)
@@ -62,6 +63,7 @@ function snapshot() {
     at: new Date().toISOString(),
     intervalMs,
     discoveryIntervalMs,
+    lastDiscoveryCompletedAt,
     nodes: current,
     metrics: {
       total: current.length,
@@ -120,17 +122,17 @@ function arpTable() {
   }
 }
 
-function makeStatus(reachable, latencyMs, error) {
+function makeStatus(reachable, latencyMs, error, macAddress = null) {
   if (error) return 'unknown'
-  if (!reachable) return 'offline'
+  if (!reachable) return macAddress ? 'degraded' : 'offline'
   return latencyMs !== null && latencyMs >= 100 ? 'degraded' : 'online'
 }
 
 async function probe(node, mode) {
   const result = await ping(node.ip)
   const previous = nodes.get(node.ip)
-  const macAddress = arpTable().get(node.ip) || previous?.macAddress || null
-  const status = makeStatus(result.reachable, result.latencyMs, result.error)
+  const macAddress = arpTable().get(node.ip) || null
+  const status = makeStatus(result.reachable, result.latencyMs, result.error, macAddress)
   const at = new Date().toISOString()
   const record = {
     ...(previous || node),
@@ -202,9 +204,9 @@ async function runDiscoverySweep(manual = false) {
             name,
             ip,
             role: 'discovered',
-            status: makeStatus(result.reachable, result.latencyMs, null),
+            status: makeStatus(result.reachable, result.latencyMs, null, macAddress),
             latencyMs: result.reachable ? result.latencyMs : null,
-            macAddress: macAddress || previous?.macAddress || null,
+            macAddress,
             lastChecked: new Date().toISOString(),
             lastSeen: result.reachable || macAddress ? new Date().toISOString() : previous?.lastSeen || null,
             evidence: result.reachable ? 'ICMP echo reply' : macAddress ? 'ARP neighbor present; ICMP did not reply' : 'No ICMP or ARP response',
@@ -219,6 +221,7 @@ async function runDiscoverySweep(manual = false) {
         if (completed % concurrency === 0 || completed === targets.length) broadcast({ type: 'scan', state: 'progress', completed, total: targets.length })
       }
     }))
+    lastDiscoveryCompletedAt = new Date().toISOString()
     addLog({ severity: 'ok', message: `Subnet sweep complete · ${targets.length} addresses checked · ${nodes.size - anchors.length} discovered terminals tracked` })
     broadcast(snapshot())
     broadcast({ type: 'scan', state: 'complete', total: targets.length, discovered: nodes.size - anchors.length })
@@ -272,7 +275,16 @@ const server = createServer((_request, response) => {
 })
 server.on('upgrade', (request, socket) => {
   const key = request.headers['sec-websocket-key']
-  if (request.url !== '/ws' || request.headers.upgrade?.toLowerCase() !== 'websocket' || !key) {
+  const origin = request.headers.origin
+  let sameOrigin = !origin
+  if (origin) {
+    try {
+      sameOrigin = new URL(origin).host === request.headers.host
+    } catch {
+      sameOrigin = false
+    }
+  }
+  if (request.url !== '/ws' || request.headers.upgrade?.toLowerCase() !== 'websocket' || !key || !sameOrigin) {
     socket.end('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n')
     return
   }

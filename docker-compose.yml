@@ -5,5 +5,6 @@ services:
       dockerfile: Dockerfile
     container_name: neonspace-dashboard
     restart: unless-stopped
-    ports:
-      - "8086:80"
+    network_mode: host
+    # ICMP and /proc/net/arp are used only for the hardcoded 192.168.4.0/24 scan.
+    # Nginx serves the UI on host port 8086; the monitor remains on loopback:8765.

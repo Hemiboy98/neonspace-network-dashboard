@@ -7,3 +7,6 @@
 !public/standalone.html
 !scripts/
 !scripts/build-static.mjs
+!server/
+!server/monitor.mjs
+!server/entrypoint.mjs
