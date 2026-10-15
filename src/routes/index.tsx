@@ -19,6 +19,11 @@ const links: LinkData[] = [
   { source: 'Proxmox VE Hypervisor', destination: 'Homarr Cockpit Portal', color: '#4A90E2' },
   { source: 'Proxmox VE Hypervisor', destination: 'Docker Host Engine', color: '#39FF14' },
   { source: 'Docker Host Engine', destination: 'Chronos-05 Plex Vault', color: '#00FFFF' },
+  { source: 'Gateway eero Router', destination: 'Discovered · 192.168.4.12', color: '#7a6aff' },
+  { source: 'Docker Host Engine', destination: 'Discovered · 192.168.4.12', color: '#39ff88' },
+  { source: 'Gateway eero Router', destination: 'Discovered · 192.168.4.77', color: '#7a6aff' },
+  { source: 'Proxmox VE Hypervisor', destination: 'Discovered · 192.168.4.77', color: '#ff58cf' },
+  { source: 'Gateway eero Router', destination: 'Discovered · 192.168.4.134', color: '#7a6aff' },
 ]
 const names = [...new Set(links.flatMap(link => [link.source, link.destination]))]
 const healthOverrides: Record<string, HealthStatus> = {}
@@ -236,7 +241,7 @@ function NetworkCanvas({ selected, onSelect, beamSpeed }: { selected: string | n
       context.restore(); context.globalAlpha = 0.17; context.beginPath(); context.ellipse(x, y, r * 2.05, r * 0.65, -0.28, Math.PI * 1.08, Math.PI * 1.92); context.strokeStyle = planet.ring; context.stroke(); context.restore()
     }
     const anchors = (name: string, index: number) => {
-      const group = /Gateway/i.test(name) ? [0.16, 0.50] : /Proxmox/i.test(name) ? [0.40, 0.50] : /Homarr/i.test(name) ? [0.64, 0.28] : /Docker/i.test(name) ? [0.64, 0.72] : /Plex|Vault/i.test(name) ? [0.84, 0.72] : [0.30 + (index % 5) * 0.12, 0.85]
+      const group = /Gateway/i.test(name) ? [0.16, 0.50] : /Proxmox/i.test(name) ? [0.40, 0.50] : /Homarr/i.test(name) ? [0.64, 0.28] : /Docker/i.test(name) ? [0.64, 0.72] : /Plex|Vault/i.test(name) ? [0.84, 0.72] : /Discovered/i.test(name) ? [0.30 + (index % 5) * 0.14, 0.12 + (index % 3) * 0.22] : [0.30 + (index % 5) * 0.12, 0.85]
       return { x: group[0] * width, y: group[1] * height }
     }
     const resize = () => {

@@ -30,9 +30,11 @@ import { spawn, execSync } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
 import { readFileSync, existsSync, readlinkSync, readdirSync, statSync } from 'node:fs'
 import { createServer } from 'node:http'
+import { Socket } from 'node:net'
 import { connect as tlsConnect } from 'node:tls'
 import { lookup as dnsLookup, resolve4 } from 'node:dns/promises'
 import { networkInterfaces } from 'node:os'
+import dgram from 'node:dgram'
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
@@ -203,7 +205,7 @@ function vendorForMac(mac) {
 
 function checkPort(ip, port, timeoutMs = 2000) {
   return new Promise((resolve) => {
-    const socket = new (require('node:net').Socket)()
+    const socket = new Socket()
     let done = false
     const timer = setTimeout(() => { if (!done) { done = true; socket.destroy(); resolve({ open: false, latencyMs: null, error: 'timeout' }) } }, timeoutMs)
     socket.setTimeout(timeoutMs)
@@ -390,12 +392,11 @@ async function runDnsBenchmark() {
 function dockerRequest(path, method = 'GET', body = null) {
   return new Promise((resolve) => {
     if (!existsSync(DOCKER_SOCKET)) { resolve({ error: 'Docker socket not mounted' }); return }
-    const { spawn: spawnHelper } = require('node:child_process')
     try {
       const args = ['--unix-socket', DOCKER_SOCKET, '-s', '-X', method, `http://localhost/v1.41${path}`]
       if (body) args.push('-H', 'Content-Type: application/json', '-d', JSON.stringify(body))
       let output = '', errOutput = '', settled = false
-      const child = spawnHelper('curl', args, { stdio: ['ignore', 'pipe', 'pipe'] })
+      const child = spawn('curl', args, { stdio: ['ignore', 'pipe', 'pipe'] })
       const timer = setTimeout(() => { if (!settled) { settled = true; child.kill('SIGKILL'); resolve({ error: 'timeout' }) } }, 5000)
       child.stdout.setEncoding('utf8'); child.stdout.on('data', (d) => { output += d })
       child.stderr.setEncoding('utf8'); child.stderr.on('data', (d) => { errOutput += d })
@@ -643,7 +644,6 @@ function sendMagicPacket(mac, broadcast = WOL_BROADCAST) {
       const magic = Buffer.alloc(102)
       magic.fill(0xff, 0, 6)
       for (let i = 6; i < 102; i += 6) { for (let j = 0; j < 6; j++) magic[i + j] = parseInt(clean.slice(j * 2, j * 2 + 2), 16) }
-      const dgram = require('node:dgram')
       const sock = dgram.createSocket('udp4')
       sock.on('error', (e) => { sock.close(); resolve({ ok: false, error: e.message }) })
       sock.bind(() => { sock.setBroadcast(true); sock.send(magic, 0, magic.length, 9, broadcast, (err) => { sock.close(); resolve(err ? { ok: false, error: err.message } : { ok: true, mac, broadcast }) }) })
