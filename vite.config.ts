@@ -197,6 +197,8 @@ function blinkRouteTreeHealth() {
 }
 
 export default defineConfig({
+  // Relative bundle URLs let the flattened static dist work at any private LAN origin.
+  base: './',
   plugins: [
     blinkEnsureRootCss(),
     blinkRouteTreeHealth(),

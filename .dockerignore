@@ -1,0 +1,9 @@
+**
+!Dockerfile
+!docker-compose.yml
+!docker/
+!docker/nginx.conf
+!public/
+!public/standalone.html
+!scripts/
+!scripts/build-static.mjs

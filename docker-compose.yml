@@ -1,0 +1,9 @@
+services:
+  neonspace:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: neonspace-dashboard
+    restart: unless-stopped
+    ports:
+      - "8086:80"
