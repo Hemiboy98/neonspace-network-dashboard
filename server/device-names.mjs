@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 
 const REQUIRED_DEVICE_IPS = [
   '192.168.4.20',
+  '192.168.4.22',
   '192.168.4.24',
   '192.168.4.27',
   '192.168.4.28',
