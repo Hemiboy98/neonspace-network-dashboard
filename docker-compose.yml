@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     network_mode: host
     # ICMP, ARP, and /proc/net/arp are used for the 192.168.4.0/24 scan.
-    # The Docker socket is mounted for container monitoring and control.
+    # Docker socket powers monitoring and control; :ro does not restrict API operations.
     # /dev is mounted read-only for SMART drive health via smartctl.
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -15,7 +15,7 @@ services:
     environment:
       # ── Scan timing (milliseconds) ──
       SCAN_INTERVAL_MS: "10000"
-      DISCOVERY_INTERVAL_MS: "30000"
+      DISCOVERY_INTERVAL_MS: "10000"
       PORT_INTERVAL_MS: "10000"
       WAN_INTERVAL_MS: "10000"
       # ── Optional API tokens (leave blank to skip) ──
@@ -24,8 +24,9 @@ services:
       # ── Wake-on-LAN target (gaming PC MAC) ──
       # WOL_MAC: "AA:BB:CC:DD:EE:FF"
       # ── Weather location ──
-      WEATHER_LAT: "40.71"
-      WEATHER_LON: "-74.01"
+      # Set WEATHER_LAT and WEATHER_LON explicitly to enable weather.
+      # DASHBOARD_TOKEN: "generate-a-long-random-secret"
+      # PVE_HOST: "192.168.4.200"
       # ── GitHub repo for event telemetry ──
       GITHUB_REPO: "Hemiboy98/neonspace-network-dashboard"
     # Nginx serves the UI on host port 8086; the monitor stays on loopback:8765.

@@ -26,20 +26,21 @@
  * control actions (Docker start/stop/restart, WoL).
  */
 
-import { spawn, execSync } from 'node:child_process'
+import { spawn, execFileSync } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
 import { readFileSync, existsSync, readlinkSync, readdirSync, statSync } from 'node:fs'
-import { createServer } from 'node:http'
+import { createServer, request as httpRequest } from 'node:http'
+import { request as httpsRequest } from 'node:https'
 import { Socket } from 'node:net'
 import { connect as tlsConnect } from 'node:tls'
-import { lookup as dnsLookup, resolve4 } from 'node:dns/promises'
+import { lookup as dnsLookup, resolve4, reverse } from 'node:dns/promises'
 import { networkInterfaces } from 'node:os'
 import dgram from 'node:dgram'
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
 const SCAN_INTERVAL = Number(process.env.SCAN_INTERVAL_MS || 10_000)
-const DISCOVERY_INTERVAL = Number(process.env.DISCOVERY_INTERVAL_MS || 30_000)
+const DISCOVERY_INTERVAL = Number(process.env.DISCOVERY_INTERVAL_MS || 10_000)
 const PORT_INTERVAL = Number(process.env.PORT_INTERVAL_MS || 10_000)
 const WAN_INTERVAL = Number(process.env.WAN_INTERVAL_MS || 10_000)
 const SSL_INTERVAL = Number(process.env.SSL_INTERVAL_MS || 300_000)
@@ -54,42 +55,46 @@ const WEATHER_INTERVAL = Number(process.env.WEATHER_INTERVAL_MS || 600_000)
 const PORT = Number(process.env.MONITOR_PORT || 8765)
 
 const PVE_API_TOKEN = process.env.PVE_API_TOKEN || ''
+const PVE_HOST = process.env.PVE_HOST || '192.168.4.200'
+const PLEX_HOST = process.env.PLEX_HOST || '192.168.4.49:32400'
 const PLEX_TOKEN = process.env.PLEX_TOKEN || ''
 const GITHUB_REPO = process.env.GITHUB_REPO || 'Hemiboy98/neonspace-network-dashboard'
-const WEATHER_LAT = Number(process.env.WEATHER_LAT || 40.71)
-const WEATHER_LON = Number(process.env.WEATHER_LON || -74.01)
+const WEATHER_LAT = process.env.WEATHER_LAT
+const WEATHER_LON = process.env.WEATHER_LON
 const WOL_MAC = process.env.WOL_MAC || ''
 const WOL_BROADCAST = process.env.WOL_BROADCAST || '192.168.4.255'
 const SSL_TARGETS = (process.env.SSL_TARGETS || '192.168.4.200:8006,192.168.4.33:7575,192.168.4.49:32400').split(',').filter(Boolean)
 const DNS_TARGETS = (process.env.DNS_TARGETS || 'google.com,cloudflare.com,github.com,plex.tv').split(',').filter(Boolean)
 const DOCKER_SOCKET = process.env.DOCKER_SOCKET || '/var/run/docker.sock'
+const DASHBOARD_TOKEN = process.env.DASHBOARD_TOKEN || ''
+const DEVICE_NAMES_PATH = process.env.DEVICE_NAMES_PATH || '/app/public/device-names.json'
+let DEVICE_NAMES = {}
+try { DEVICE_NAMES = JSON.parse(readFileSync(DEVICE_NAMES_PATH, 'utf8')) } catch (e) { console.error(`[monitor] device dictionary unavailable: ${e.message}`) }
 
 // ─── Anchor definitions ───────────────────────────────────────────────────────
 
-const anchors = [
-  { id: 'gateway', name: 'Gateway eero Router', ip: '192.168.4.1', kind: 'Router' },
-  { id: 'homarr', name: 'Homarr Cockpit Portal', ip: '192.168.4.33', kind: 'Dashboard service' },
-  { id: 'docker', name: 'Docker Host Engine', ip: '192.168.4.48', kind: 'Container host' },
-  { id: 'plex', name: 'Chronos-05 Plex Vault', ip: '192.168.4.49', kind: 'Media server' },
-  { id: 'proxmox', name: 'Proxmox VE Hypervisor', ip: '192.168.4.200', kind: 'Hypervisor' },
-]
+const anchors = Object.entries(DEVICE_NAMES).map(([ip, name]) => ({ id: `host-${ip.replaceAll('.', '-')}`, name, ip, kind: ip.startsWith('100.') ? 'Tailscale tunnel' : 'Inventory device', role: 'anchor' }))
 
 const portChecks = [
-  { ip: '192.168.4.200', label: 'Proxmox VE UI', port: 8006, anchor: 'proxmox' },
-  { ip: '192.168.4.33', label: 'Homarr Portal', port: 7575, anchor: 'homarr' },
+  { ip: '192.168.4.47', label: 'Proxmox VE UI', port: 8006 },
+  { ip: '192.168.4.200', label: 'Proxmox VE UI', port: 8006 },
+  { ip: '192.168.4.33', label: 'Homarr Portal', port: 7575 },
   { ip: '192.168.4.49', label: 'Plex Streaming', port: 32400, anchor: 'plex' },
 ]
 
-const portMatrixTargets = [
-  { ip: '192.168.4.200', label: 'Proxmox VE' },
-  { ip: '192.168.4.33', label: 'Homarr' },
-  { ip: '192.168.4.48', label: 'Docker Host' },
-  { ip: '192.168.4.49', label: 'Plex Vault' },
-]
-const portMatrixPorts = [22, 80, 443, 8006, 32400, 7575]
+const portMatrixTargets = [...new Map(portChecks.map((pc) => [pc.ip, { ip: pc.ip, label: anchors.find((n) => n.ip === pc.ip)?.name || pc.label }])).values()]
+const portMatrixPorts = [22, 80, 443, 7575, 8006, 32400]
 
 const knownIps = new Set(anchors.map((n) => n.ip))
 const nodes = new Map(anchors.map((n) => [n.ip, { ...n, role: 'anchor', status: 'unknown', latencyMs: null, macAddress: null, vendor: null, lastChecked: null, lastSeen: null, portState: {}, evidence: 'Waiting for first probe' }]))
+const reverseCache = new Map()
+async function reverseHostname(ip) {
+  const cached = reverseCache.get(ip)
+  if (cached && cached.expires > Date.now()) return cached.name
+  const result = await Promise.race([reverse(ip).then((names) => names[0] || null).catch(() => null), new Promise((resolve) => setTimeout(() => resolve(null), 1200))])
+  reverseCache.set(ip, { name: result, expires: Date.now() + (result ? 3_600_000 : 60_000) })
+  return result
+}
 const clients = new Set()
 const logs = []
 
@@ -207,9 +212,10 @@ function checkPort(ip, port, timeoutMs = 2000) {
   return new Promise((resolve) => {
     const socket = new Socket()
     let done = false
+    const started = performance.now()
     const timer = setTimeout(() => { if (!done) { done = true; socket.destroy(); resolve({ open: false, latencyMs: null, error: 'timeout' }) } }, timeoutMs)
     socket.setTimeout(timeoutMs)
-    socket.once('connect', () => { if (!done) { done = true; clearTimeout(timer); socket.destroy(); resolve({ open: true, latencyMs: null }) } })
+    socket.once('connect', () => { if (!done) { done = true; clearTimeout(timer); socket.destroy(); resolve({ open: true, latencyMs: Number((performance.now() - started).toFixed(2)) }) } })
     socket.once('error', (e) => { if (!done) { done = true; clearTimeout(timer); resolve({ open: false, latencyMs: null, error: e.code || e.message }) } })
     socket.once('timeout', () => { if (!done) { done = true; clearTimeout(timer); socket.destroy(); resolve({ open: false, latencyMs: null, error: 'timeout' }) } })
     socket.connect({ host: ip, port })
@@ -228,12 +234,13 @@ function makeStatus(reachable, latencyMs, error, macAddress = null) {
 
 async function probe(node, mode) {
   const result = await ping(node.ip)
+  const hostname = result.reachable ? await reverseHostname(node.ip) : null
   const previous = nodes.get(node.ip)
   const macAddress = arpTable().get(node.ip) || null
   const vendor = vendorForMac(macAddress) || previous?.vendor || null
   const status = makeStatus(result.reachable, result.latencyMs, result.error, macAddress)
   const at = new Date().toISOString()
-  const record = { ...(previous || node), ...node, role: node.role || 'anchor', status, latencyMs: result.reachable ? result.latencyMs : null, macAddress, vendor, lastChecked: at, lastSeen: result.reachable || macAddress ? at : previous?.lastSeen || null, evidence: result.error ? `Probe error: ${result.error}` : result.reachable ? 'ICMP echo reply' : macAddress ? 'ARP neighbor present; ICMP did not reply' : 'No ICMP or ARP response' }
+  const record = { ...(previous || node), ...node, hostname: hostname || previous?.hostname || null, role: node.role || 'anchor', status, latencyMs: result.reachable ? result.latencyMs : null, macAddress, vendor, lastChecked: at, lastSeen: result.reachable || macAddress ? at : previous?.lastSeen || null, evidence: result.error ? `Probe error: ${result.error}` : result.reachable ? 'ICMP echo reply' : macAddress ? 'ARP neighbor present; ICMP did not reply' : 'No ICMP or ARP response' }
   nodes.set(node.ip, record)
   broadcast({ type: 'node', node: record })
   const changed = !previous || previous.status !== status
@@ -271,8 +278,9 @@ async function runDiscoverySweep(manual = false) {
         const ip = targets[cursor++]; const result = await ping(ip); const previous = nodes.get(ip); const macAddress = arpTable().get(ip) || null; const vendor = vendorForMac(macAddress) || previous?.vendor || null
         if (result.error) { if (previous) nodes.set(ip, { ...previous, status: 'unknown', latencyMs: null, lastChecked: new Date().toISOString(), evidence: `Probe error: ${result.error}` }) }
         else if (result.reachable || macAddress || previous) {
-          const name = previous?.name || `Discovered terminal · ${ip}`
-          const record = { id: previous?.id || `host-${ip.replaceAll('.', '-')}`, name, ip, role: 'discovered', status: makeStatus(result.reachable, result.latencyMs, null, macAddress), latencyMs: result.reachable ? result.latencyMs : null, macAddress, vendor, lastChecked: new Date().toISOString(), lastSeen: result.reachable || macAddress ? new Date().toISOString() : previous?.lastSeen || null, evidence: result.reachable ? 'ICMP echo reply' : macAddress ? 'ARP neighbor present; ICMP did not reply' : 'No ICMP or ARP response' }
+          const hostname = await reverseHostname(ip)
+          const name = DEVICE_NAMES[ip] || hostname || previous?.name || `Discovered terminal · ${ip}`
+          const record = { id: previous?.id || `host-${ip.replaceAll('.', '-')}`, name, hostname, ip, role: 'discovered', status: makeStatus(result.reachable, result.latencyMs, null, macAddress), latencyMs: result.reachable ? result.latencyMs : null, macAddress, vendor, lastChecked: new Date().toISOString(), lastSeen: result.reachable || macAddress ? new Date().toISOString() : previous?.lastSeen || null, evidence: result.reachable ? 'ICMP echo reply' : macAddress ? 'ARP neighbor present; ICMP did not reply' : 'No ICMP or ARP response' }
           nodes.set(ip, record); broadcast({ type: 'node', node: record })
           if (result.reachable || (previous && previous.status !== record.status)) addLog({ name, ip, severity: result.reachable ? record.status === 'degraded' ? 'warn' : 'ok' : 'warn', message: result.reachable ? `ICMP response in ${result.latencyMs === null ? 'under 1 ms' : `${result.latencyMs.toFixed(1)} ms`}` : record.evidence })
         }
@@ -288,34 +296,37 @@ async function runDiscoverySweep(manual = false) {
 
 // ─── Port health checks ──────────────────────────────────────────────────────
 
+let portRunning = false
 async function runPortChecks() {
-  for (const pc of portChecks) {
+  if (portRunning) return
+  portRunning = true
+  broadcast({ type: 'ports-status', state: 'checking' })
+  try {
+  await Promise.all(portChecks.map(async (pc) => {
     const result = await checkPort(pc.ip, pc.port)
     const at = new Date().toISOString()
     const record = { ...result, label: pc.label, ip: pc.ip, port: pc.port, at }
     // Update anchor node port state
     const node = nodes.get(pc.ip)
     if (node) {
-      node.portState = { ...(node.portState || {}), [pc.port]: result.open }
-      node.serviceHealthy = Object.values(node.portState).some(Boolean)
+      node.portState = { ...(node.portState || {}), [pc.port]: { open: result.open, latencyMs: result.latencyMs, checkedAt: at } }
+      node.serviceHealthy = Object.values(node.portState).some((port) => port === true || port?.open === true)
       nodes.set(pc.ip, node)
       broadcast({ type: 'node', node })
     }
     broadcast({ type: 'port-check', portCheck: record })
     if (!result.open) addLog({ name: pc.label, ip: pc.ip, severity: 'warn', message: `Port ${pc.port} not responding` })
-    else if (result.open) addLog({ name: pc.label, ip: pc.ip, severity: 'ok', message: `Port ${pc.port} responsive — System Stabilized` })
-  }
+    else if (result.open) addLog({ name: pc.label, ip: pc.ip, severity: 'ok', message: `Port ${pc.port} responsive` })
+  }))
   // Full port matrix for the scanner panel
   const matrix = {}
-  for (const target of portMatrixTargets) {
-    matrix[target.ip] = { label: target.label, ports: {} }
-    for (const port of portMatrixPorts) {
-      const result = await checkPort(target.ip, port, 1500)
-      matrix[target.ip].ports[port] = { open: result.open, latencyMs: result.latencyMs }
-    }
-  }
+  for (const target of portMatrixTargets) matrix[target.ip] = { label: target.label, ports: {} }
+  const results = await Promise.all(portMatrixTargets.flatMap((target) => portMatrixPorts.map(async (port) => ({ target, port, result: await checkPort(target.ip, port, 1200) }))))
+  for (const { target, port, result } of results) matrix[target.ip].ports[port] = { open: result.open, latencyMs: result.latencyMs }
   state.portMatrix = matrix
   broadcast({ type: 'port-matrix', matrix })
+  broadcast({ type: 'ports-status', state: 'complete', at: new Date().toISOString() })
+  } finally { portRunning = false }
 }
 
 // ─── WAN diagnostics ─────────────────────────────────────────────────────────
@@ -392,21 +403,16 @@ async function runDnsBenchmark() {
 function dockerRequest(path, method = 'GET', body = null) {
   return new Promise((resolve) => {
     if (!existsSync(DOCKER_SOCKET)) { resolve({ error: 'Docker socket not mounted' }); return }
-    try {
-      const args = ['--unix-socket', DOCKER_SOCKET, '-s', '-X', method, `http://localhost/v1.41${path}`]
-      if (body) args.push('-H', 'Content-Type: application/json', '-d', JSON.stringify(body))
-      let output = '', errOutput = '', settled = false
-      const child = spawn('curl', args, { stdio: ['ignore', 'pipe', 'pipe'] })
-      const timer = setTimeout(() => { if (!settled) { settled = true; child.kill('SIGKILL'); resolve({ error: 'timeout' }) } }, 5000)
-      child.stdout.setEncoding('utf8'); child.stdout.on('data', (d) => { output += d })
-      child.stderr.setEncoding('utf8'); child.stderr.on('data', (d) => { errOutput += d })
-      child.once('close', (code) => {
-        if (settled) return; settled = true; clearTimeout(timer)
-        if (code !== 0) { resolve({ error: errOutput || `curl exit ${code}` }); return }
-        try { resolve(JSON.parse(output)) } catch { resolve({ raw: output }) }
-      })
-      child.once('error', (e) => { if (!settled) { settled = true; clearTimeout(timer); resolve({ error: e.message }) } })
-    } catch (e) { resolve({ error: e.message }) }
+    const payload = body ? Buffer.from(JSON.stringify(body)) : null
+    const req = httpRequest({ socketPath: DOCKER_SOCKET, path: `/v1.41${path}`, method, headers: payload ? { 'content-type': 'application/json', 'content-length': payload.length } : {} }, (res) => {
+      let output = ''
+      res.setEncoding('utf8'); res.on('data', (chunk) => { output += chunk })
+      res.on('end', () => { try { const data = JSON.parse(output || '{}'); resolve(res.statusCode >= 400 ? { error: data.message || `Docker HTTP ${res.statusCode}` } : data) } catch { resolve({ error: 'Invalid Docker API response' }) } })
+    })
+    req.setTimeout(5000, () => req.destroy(new Error('timeout')))
+    req.on('error', (error) => resolve({ error: error.message }))
+    if (payload) req.write(payload)
+    req.end()
   })
 }
 
@@ -429,23 +435,47 @@ async function runDockerMonitor() {
     }
   }))
   state.docker.containers = enriched
-  broadcast({ type: 'docker', docker: { containers: enriched, available: true } })
+  state.docker.events = await readDockerEvents()
+  state.docker.freshness = await checkDockerHubVersions(enriched)
+  broadcast({ type: 'docker', docker: { containers: enriched, events: state.docker.events, freshness: state.docker.freshness, available: true } })
+}
+
+async function readDockerEvents() {
+  if (!existsSync(DOCKER_SOCKET)) return []
+  return new Promise((resolve) => {
+    const req = httpRequest({ socketPath: DOCKER_SOCKET, path: `/v1.41/events?since=${Math.floor(Date.now() / 1000) - 60}`, method: 'GET' }, (res) => {
+      let data = ''; res.setEncoding('utf8'); res.on('data', (chunk) => { data += chunk })
+      res.on('end', () => { try { resolve(data.trim().split('\n').filter(Boolean).map((line) => JSON.parse(line)).slice(-30)) } catch { resolve([]) } })
+    })
+    req.setTimeout(5000, () => req.destroy(new Error('timeout'))); req.on('error', () => resolve([])); req.end()
+  })
 }
 
 // Docker Hub version check
+const hubCache = new Map()
 async function checkDockerHubVersions(containers) {
-  for (const c of containers) {
-    const [repo] = c.image.split(':')
-    const tag = c.image.split(':')[1] || 'latest'
-    if (!repo.includes('/')) continue
-    try {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 5000)
-      const res = await fetch(`https://hub.docker.com/v2/repositories/${repo}/tags/${tag}`, { signal: controller.signal })
-      clearTimeout(timeout)
-      if (res.ok) { /* could check digest vs running */ }
-    } catch {}
-  }
+  return Promise.all(containers.map(async (container) => {
+    const image = container.image || ''
+    if (image.includes('@sha256:')) return { id: container.id, available: false, reason: 'Image uses a digest reference' }
+    const slash = image.lastIndexOf('/'), colon = image.lastIndexOf(':')
+    const tag = colon > slash ? image.slice(colon + 1) : 'latest'
+    const repo = colon > slash ? image.slice(0, colon) : image
+    if (repo.includes('.') && !repo.startsWith('docker.io/')) return { id: container.id, available: false, reason: 'Non-Docker-Hub registry' }
+    const normalized = (repo.startsWith('docker.io/') ? repo.slice(9) : repo).includes('/') ? (repo.startsWith('docker.io/') ? repo.slice(9) : repo) : `library/${repo}`
+    const key = `${normalized}:${tag}`
+    let result = hubCache.get(key)
+    if (!result || result.expires < Date.now()) {
+      try {
+        const response = await fetch(`https://hub.docker.com/v2/repositories/${normalized}/tags/${encodeURIComponent(tag)}`, { signal: AbortSignal.timeout(5000) })
+        if (!response.ok) return { id: container.id, available: false, reason: `Docker Hub HTTP ${response.status}` }
+        const data = await response.json()
+        const digest = data.digest || data.images?.find((entry) => entry.os === 'linux')?.digest || null
+        result = { available: Boolean(digest), remoteDigest: digest, updateAvailable: null, reason: 'Docker API does not expose the running container image digest' }
+        hubCache.set(key, { ...result, expires: Date.now() + 300_000 })
+      } catch { return { id: container.id, available: false, reason: 'Docker Hub lookup failed' } }
+    } else result = { ...result, expires: undefined }
+    return { id: container.id, ...result }
+  }))
 }
 
 // ─── GitHub events ───────────────────────────────────────────────────────────
@@ -482,7 +512,7 @@ async function runSmartCheck() {
     const blockDevices = readdirSync('/dev').filter((d) => /^sd[a-z]$|^nvme\d+n\d+$/.test(d))
     for (const dev of blockDevices) {
       try {
-        const output = execSync(`smartctl -A -j /dev/${dev} 2>/dev/null`, { timeout: 5000, encoding: 'utf8' })
+        const output = execFileSync('smartctl', ['-A', '-j', `/dev/${dev}`], { timeout: 5000, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
         const data = JSON.parse(output)
         const temp = data.temperature?.current || null
         const reallocated = data.ata_smart_attributes?.table?.find((a) => a.id === 5)?.raw?.value || 0
@@ -518,7 +548,7 @@ async function runPlexPoll() {
   try {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 8000)
-    const res = await fetch('http://192.168.4.49:32400/status/sessions?X-Plex-Token=' + PLEX_TOKEN, { headers: { 'Accept': 'application/json', 'X-Plex-Token': PLEX_TOKEN }, signal: controller.signal })
+    const res = await fetch(`http://${PLEX_HOST}/status/sessions`, { headers: { 'Accept': 'application/json', 'X-Plex-Token': PLEX_TOKEN }, signal: controller.signal })
     clearTimeout(timeout)
     if (!res.ok) { state.plex = { sessions: [], artwork: [], activeStreams: 0, configured: true, error: `HTTP ${res.status}` }; return }
     const data = await res.json()
@@ -526,9 +556,9 @@ async function runPlexPoll() {
       key: item.key, title: item.title, type: item.type, grandparentTitle: item.grandparentTitle,
       summary: item.summary?.slice(0, 200), duration: item.duration, viewOffset: item.viewOffset,
       user: item.User?.title, player: item.Player?.title, state: item.Player?.state,
-      artThumb: item.art ? `http://192.168.4.49:32400${item.art}?X-Plex-Token=${PLEX_TOKEN}` : null,
-      thumb: item.thumb ? `http://192.168.4.49:32400${item.thumb}?X-Plex-Token=${PLEX_TOKEN}` : null,
-      poster: item.thumb ? `http://192.168.4.49:32400${item.thumb}?X-Plex-Token=${PLEX_TOKEN}` : null,
+      artThumb: item.art ? `/api/plex/artwork?path=${encodeURIComponent(item.art)}` : null,
+      thumb: item.thumb ? `/api/plex/artwork?path=${encodeURIComponent(item.thumb)}` : null,
+      poster: item.thumb ? `/api/plex/artwork?path=${encodeURIComponent(item.thumb)}` : null,
     }))
     state.plex = { sessions, artwork: sessions.map((s) => s.poster).filter(Boolean), activeStreams: sessions.length, configured: true }
     broadcast({ type: 'plex', plex: state.plex })
@@ -542,11 +572,17 @@ async function runProxmoxPoll() {
   try {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 8000)
-    const [tokenUser, tokenName] = PVE_API_TOKEN.split('=')
-    const res = await fetch('https://192.168.4.200:8006/api2/json/nodes', {
-      headers: { Authorization: `PVEAPIToken=${tokenUser}!${tokenName}=${PVE_API_TOKEN.split('=').pop()}`, Accept: 'application/json' },
-      signal: controller.signal,
+    const [identity, secret] = PVE_API_TOKEN.split('=')
+    const [tokenUser, tokenName] = (identity || '').split('!')
+    const pveHeaders = { Authorization: `PVEAPIToken=${tokenUser}!${tokenName}=${secret || ''}`, Accept: 'application/json' }
+    const pveRequest = (path) => new Promise((resolve, reject) => {
+      const req = httpsRequest({ hostname: PVE_HOST.replace(/^https?:\/\//, '').split(':')[0], port: Number(PVE_HOST.match(/:(\d+)$/)?.[1] || 8006), path: `/api2/json${path}`, method: 'GET', headers: pveHeaders, rejectUnauthorized: false, timeout: 6000 }, (response) => {
+        let body = ''; response.setEncoding('utf8'); response.on('data', (chunk) => { body += chunk }); response.on('end', () => { try { resolve({ status: response.statusCode, data: JSON.parse(body) }) } catch { reject(new Error('Invalid Proxmox response')) } })
+      }); req.on('timeout', () => req.destroy(new Error('timeout'))); req.on('error', reject); req.end()
     })
+    clearTimeout(timeout)
+    const response = await pveRequest('/nodes')
+    const res = { ok: response.status >= 200 && response.status < 300, status: response.status, json: async () => response.data }
     clearTimeout(timeout)
     if (!res.ok) { state.proxmox = { nodes: [], vms: [], storage: [], configured: true, error: `HTTP ${res.status}` }; return }
     const data = await res.json()
@@ -554,11 +590,8 @@ async function runProxmoxPoll() {
     const vms = []
     for (const node of pveNodes) {
       try {
-        const vmRes = await fetch(`https://192.168.4.200:8006/api2/json/nodes/${node.node}/qemu`, {
-          headers: { Authorization: `PVEAPIToken=${PVE_API_TOKEN}`, Accept: 'application/json' },
-          signal: AbortSignal.timeout(5000),
-        })
-        if (vmRes.ok) { const vmData = await vmRes.json(); for (const vm of vmData.data || []) vms.push({ ...vm, node: node.node }) }
+        const vmRes = await pveRequest(`/nodes/${encodeURIComponent(node.node)}/qemu`)
+        if (vmRes.status >= 200 && vmRes.status < 300) for (const vm of vmRes.data.data || []) vms.push({ ...vm, node: node.node })
       } catch {}
     }
     state.proxmox = { nodes: pveNodes, vms, storage: [], configured: true }
@@ -603,6 +636,7 @@ async function runThroughput() {
 // ─── Weather (Open-Meteo, keyless) ────────────────────────────────────────────
 
 async function runWeatherPoll() {
+  if (!WEATHER_LAT || !WEATHER_LON || !Number.isFinite(Number(WEATHER_LAT)) || !Number.isFinite(Number(WEATHER_LON))) return
   try {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 10_000)
@@ -680,7 +714,7 @@ function broadcastFullState(socket) {
   send(socket, { type: 'wan', wan: { lossPct: state.wan.lossPct, rttMs: state.wan.rttMs, drops: state.wan.drops, history: state.wan.history.slice(-30) } })
   send(socket, { type: 'ssl', ssl: state.ssl })
   send(socket, { type: 'dns', dns: state.dns })
-  send(socket, { type: 'docker', docker: { containers: state.docker.containers, available: existsSync(DOCKER_SOCKET) } })
+  send(socket, { type: 'docker', docker: { containers: state.docker.containers, events: state.docker.events, freshness: state.docker.freshness, available: existsSync(DOCKER_SOCKET) } })
   send(socket, { type: 'github', github: state.github })
   send(socket, { type: 'smart', smart: state.smart })
   send(socket, { type: 'plex', plex: state.plex })
@@ -691,19 +725,51 @@ function broadcastFullState(socket) {
 
 // ─── HTTP API router ─────────────────────────────────────────────────────────
 
-function sendJson(res, status, data) { res.writeHead(status, { 'content-type': 'application/json', 'access-control-allow-origin': '*' }); res.end(JSON.stringify(data)) }
+function sendJson(res, status, data) { res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' }); res.end(JSON.stringify(data)) }
+function sameOrigin(req) { const origin = req.headers.origin; if (!origin) return true; try { return new URL(origin).host === req.headers.host } catch { return false } }
+function validMac(mac) { return typeof mac === 'string' && /^(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}$/i.test(mac) }
+function validBroadcast(host) {
+  if (typeof host !== 'string' || !/^(?:\d{1,3}\.){3}\d{1,3}$/.test(host)) return false
+  return host.split('.').every((part) => Number(part) >= 0 && Number(part) <= 255)
+}
+function authorized(req, res) {
+  if (!DASHBOARD_TOKEN) { sendJson(res, 503, { error: 'Docker control unavailable: DASHBOARD_TOKEN is not configured' }); return false }
+  if (!sameOrigin(req)) { sendJson(res, 403, { error: 'Cross-origin request denied' }); return false }
+  if (req.headers.authorization !== `Bearer ${DASHBOARD_TOKEN}`) { sendJson(res, 401, { error: 'Bearer token required' }); return false }
+  return true
+}
 
 async function handleApi(req, res, url) {
   const path = url.pathname
   const method = req.method
 
-  // CORS preflight
-  if (method === 'OPTIONS') { res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET,POST,OPTIONS', 'access-control-allow-headers': 'Content-Type' }); res.end(); return }
+  // Same-origin only; API is intentionally not CORS-enabled.
+  if (method === 'OPTIONS') { res.writeHead(403); res.end(); return }
+  if (method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATCH') {
+    if (!sameOrigin(req)) { sendJson(res, 403, { error: 'Cross-origin request denied' }); return }
+    if (!authorized(req, res)) return
+  }
+  if (path === '/api/config' && method === 'GET') { sendJson(res, 200, { controlEnabled: Boolean(DASHBOARD_TOKEN), weatherConfigured: Boolean(WEATHER_LAT && WEATHER_LON), plexConfigured: Boolean(PLEX_TOKEN), proxmoxConfigured: Boolean(PVE_API_TOKEN) }); return }
+  if (path === '/api/device-names' && method === 'GET') { sendJson(res, 200, DEVICE_NAMES); return }
 
   if (path === '/api/docker' && method === 'GET') { sendJson(res, 200, { containers: state.docker.containers, available: existsSync(DOCKER_SOCKET) }); return }
 
+  if (path === '/api/plex/artwork' && method === 'GET') {
+    const artworkPath = url.searchParams.get('path') || ''
+    if (!PLEX_TOKEN || !/^\/(?:library\/metadata|library\/sections|photo)\/[A-Za-z0-9_./-]+(?:\?[A-Za-z0-9_=&.-]*)?$/.test(artworkPath) || artworkPath.includes('..') || artworkPath.includes('\\')) { sendJson(res, 400, { error: 'Invalid Plex artwork path' }); return }
+    const plexUrl = `http://${PLEX_HOST}${artworkPath.startsWith('/') ? artworkPath : ''}`
+    try {
+      const artwork = await fetch(plexUrl, { headers: { 'X-Plex-Token': PLEX_TOKEN }, signal: AbortSignal.timeout(8000) })
+      if (!artwork.ok) { sendJson(res, artwork.status, { error: `Plex HTTP ${artwork.status}` }); return }
+      res.writeHead(200, { 'content-type': artwork.headers.get('content-type') || 'application/octet-stream', 'cache-control': 'private, max-age=300', 'x-content-type-options': 'nosniff' })
+      res.end(Buffer.from(await artwork.arrayBuffer()))
+    } catch { sendJson(res, 502, { error: 'Plex artwork unavailable' }) }
+    return
+  }
+
   const dockerMatch = path.match(/^\/api\/docker\/([a-f0-9]{12,64})\/(start|stop|restart)$/)
   if (dockerMatch && method === 'POST') {
+    if (!authorized(req, res)) return
     const [, id, action] = dockerMatch
     const result = await dockerRequest(`/containers/${id}/${action}`, 'POST')
     addLog({ name: 'Docker Controller', severity: result.error ? 'warn' : 'ok', message: result.error ? `Failed to ${action} ${id.slice(0, 12)}: ${result.error}` : `Container ${id.slice(0, 12)} ${action} command sent` })
@@ -713,10 +779,14 @@ async function handleApi(req, res, url) {
   if (path === '/api/wol' && method === 'POST') {
     let body = ''
     req.on('data', (d) => { body += d }); req.on('end', async () => {
-      const { mac, broadcast } = JSON.parse(body || '{}')
+      let parsed
+      try { parsed = JSON.parse(body || '{}') } catch { sendJson(res, 400, { ok: false, error: 'Invalid JSON' }); return }
+      const { mac, broadcast } = parsed
       const targetMac = mac || WOL_MAC
       if (!targetMac) { sendJson(res, 400, { ok: false, error: 'No MAC address configured. Set WOL_MAC env var or pass mac in body.' }); return }
-      const result = await sendMagicPacket(targetMac, broadcast || WOL_BROADCAST)
+      const targetBroadcast = broadcast || WOL_BROADCAST
+      if (!validMac(targetMac) || !validBroadcast(targetBroadcast)) { sendJson(res, 400, { ok: false, error: 'Invalid MAC address or broadcast IPv4 address' }); return }
+      const result = await sendMagicPacket(targetMac, targetBroadcast)
       addLog({ name: 'Wake-on-LAN', severity: result.ok ? 'ok' : 'warn', message: result.ok ? `Magic packet broadcast to ${targetMac}` : `WoL failed: ${result.error}` })
       sendJson(res, result.ok ? 200 : 500, result)
     }); return

@@ -1,83 +1,43 @@
 # NeonSpace Network Dashboard
 
-A premium, self-contained, cyberpunk network observatory that runs **100% locally** inside a Docker container on your network host. No cloud dependencies, no external APIs (except optional GitHub events, Docker Hub, and keyless weather).
+A self-hosted network observatory. LAN discovery runs locally on the Docker host; GitHub events and weather are optional internet-connected data sources. The Blink preview cannot access your LAN: actual scanning happens only in the Docker deployment on your network host.
 
-## Architecture
+## Run
 
-```
-public/standalone.html  ← self-contained UI (WebGL topology + 6-ship fleet + all panels)
-server/monitor.mjs      ← Node.js background scanner (WebSocket + HTTP API, no npm deps)
-server/entrypoint.mjs   ← Docker entrypoint (launches monitor + nginx)
-docker/nginx.conf       ← serves static HTML + proxies /ws and /api/* to monitor
-scripts/build-static.mjs ← copies standalone.html → dist/index.html
-```
-
-## Background Scanning Engine
-
-The monitor server runs **15 independent modules** on their own timers:
-
-| Module | Interval | What it does |
-|--------|----------|--------------|
-| Anchor ICMP heartbeat | 10s | Pings 5 infrastructure anchors (192.168.4.1/33/48/49/200) |
-| Subnet ARP/ICMP sweep | 30s | Probes 192.168.4.2–254 for discovered terminals |
-| TCP port health checks | 10s | Probes 8006 (Proxmox), 7575 (Homarr), 32400 (Plex) |
-| Port scanner matrix | 10s | Full 6-port × 4-target open-port matrix |
-| WAN diagnostics | 10s | 5-packet burst to 8.8.8.8, packet-loss % |
-| SSL certificate check | 5min | Sweeps HTTPS endpoints for expiry (<30 days = warning) |
-| DNS resolution benchmark | 30s | Times DNS lookups for 4 reference domains |
-| Docker container monitor | 10s | Lists containers + CPU/RAM stats via socket |
-| GitHub event polling | 60s | Fetches push/commit events from the repo |
-| SMART drive health | 2min | smartctl drive temps, bad sectors, spin retries |
-| Plex API sessions | 15s | Active streams + poster artwork (needs PLEX_TOKEN) |
-| Proxmox VE API | 15s | Node/VM CPU/RAM workloads (needs PVE_API_TOKEN) |
-| Network throughput | 5s | /proc/net/dev bandwidth per interface |
-| MAC vendor resolver | on scan | OUI prefix → manufacturer (Apple, Intel, Sony, etc.) |
-| Atmospheric weather | 10min | Open-Meteo keyless API (temp, pressure, wind, storms) |
-
-## 6-Ship Fleet Tactical Panels
-
-| Ship | Panel |
-|------|-------|
-| **Dreadnought · 01** | Port Scanner Matrix — live open-port grid |
-| **Recon · 02** | IPAM Subnet Grid — 192.168.4.0/24 allocation map |
-| **Interceptor · 03** | Wake-on-LAN — broadcast magic packet to gaming PC |
-| **Leviathan · 04** | MAC Vendor Resolver — hardware manufacturer lookup |
-| **Vanguard · 05** | Network Performance — latency, throughput, ISP stability dial |
-| **Sentinel · 06** | Proxmox & Plex Telemetry — cluster + streaming sessions |
-
-## Additional Panels
-
-- **Live Docker Controller** — container cards with Start/Stop/Restart buttons
-- **GitHub Event Telemetry** — scrolling commit/event matrix log
-- **Enterprise Diagnostics** — SSL expiry warnings, SMART health, weather
-- **Plex 3D Hologram** — floating rotating poster when streams are active
-
-## Docker Deployment
-
-```bash
+```sh
+# Set secure secrets in an untracked .env file before enabling controls
+printf 'DASHBOARD_TOKEN=%s\n' "$(openssl rand -hex 32)" > .env
 docker compose up -d
 ```
 
-Access at `http://<host-ip>:8086`.
+Open `http://<host-ip>:8086`. Compose uses host networking and exposes the web service on port 8086. Deployment has not been validated in this environment.
 
-### Environment Variables
+## Runtime
+
+The dependency-free Node ESM monitor uses native Node networking and the Docker Unix socket. It scans 192.168.4.1–254 every 10 seconds, excluding known inventory IPs from discovery while probing every inventory IP separately on the same cadence. The Tailscale address is checked independently. ICMP uses the system `ping`; ARP and local OUI data enrich responding hosts. Ping latency precision is whatever the local ping utility reports. Probes, DNS, ports, Docker, SMART, and local APIs may be unavailable depending on host permissions and installed/attached hardware.
 
 | Variable | Default | Purpose |
-|----------|---------|---------|
-| `SCAN_INTERVAL_MS` | 10000 | Anchor ping interval |
-| `DISCOVERY_INTERVAL_MS` | 30000 | Subnet sweep interval |
-| `PVE_API_TOKEN` | (empty) | Proxmox API token — skip if unset |
-| `PLEX_TOKEN` | (empty) | Plex authentication token — skip if unset |
-| `WOL_MAC` | (empty) | Wake-on-LAN target MAC address |
-| `WEATHER_LAT` / `WEATHER_LON` | 40.71 / -74.01 | Weather location |
-| `GITHUB_REPO` | Hemiboy98/neonspace-network-dashboard | Repo for event telemetry |
-| `SSL_TARGETS` | 192.168.4.200:8006,... | HTTPS endpoints to monitor |
+|---|---|---|
+| `SCAN_INTERVAL_MS` / `DISCOVERY_INTERVAL_MS` | 10000 | Inventory and discovery cadence (ms) |
+| `PORT_INTERVAL_MS` | 10000 | Service checks/matrix cadence |
+| `PVE_HOST` | `192.168.4.200` | Proxmox API host |
+| `PVE_API_TOKEN` | empty | Proxmox token string `user@realm!tokenid=secret` |
+| `PLEX_TOKEN` | empty | Plex API credential |
+| `DASHBOARD_TOKEN` | empty | Required Bearer token for Docker control APIs |
+| `WOL_MAC` | empty | Default Wake-on-LAN target |
+| `WEATHER_LAT`, `WEATHER_LON` | unset | Both required to enable Open-Meteo |
+| `GITHUB_REPO` | `Hemiboy98/neonspace-network-dashboard` | Optional public repository event polling |
+| `SSL_TARGETS`, `DNS_TARGETS` | built-in local/domain targets | Certificate and resolver checks |
+| `DOCKER_SOCKET` | `/var/run/docker.sock` | Docker API socket path |
 
-### Volumes
+For production, set `DASHBOARD_TOKEN` to a long random secret and send it as `Authorization: Bearer <token>` for Docker mutation requests. Without it, control endpoints return an explicit unavailable response. Mutation APIs require same-origin requests and enforce body-size limits. Keep this dashboard on a trusted network; possession of the Docker socket is effectively host-level authority. The compose socket mount is read-only as a filesystem mount, but **this does not make Docker API operations read-only**: clients can still issue API actions through the socket. Do not expose the dashboard publicly. Do not place any API token in frontend/browser configuration.
 
-- `/var/run/docker.sock` (read-only) — container monitoring + control
-- `/dev` (read-only) — SMART drive health via smartctl
+Plex artwork URLs are served through the local `/api/plex/artwork` proxy so the Plex token stays server-side. Proxmox's self-signed TLS allowance is scoped to the configured local PVE host; external requests retain normal TLS validation. SMART data is best-effort and depends on host device access/tool capabilities. Weather remains absent unless both coordinates are explicitly configured.
 
-### Network
+## Files
 
-Uses `host` networking so the monitor can reach the local 192.168.4.0/24 subnet directly.
+- `public/standalone.html`: self-contained browser UI.
+- `public/device-names.json`: canonical inventory labels, shipped to nginx and loaded by the monitor.
+- `server/monitor.mjs`: ESM monitor, WebSocket stream, and local HTTP API.
+- `docker/nginx.conf`: static hosting and reverse proxy.
+- `scripts/build-static.mjs`: static asset build.

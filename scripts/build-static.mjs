@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const sourcePath = join(projectRoot, 'public', 'standalone.html')
+const namesPath = join(projectRoot, 'public', 'device-names.json')
 const distPath = join(projectRoot, 'dist')
 
 if (!existsSync(sourcePath)) {
@@ -35,4 +36,6 @@ for (const entry of readdirSync(distPath)) {
 }
 
 writeFileSync(join(distPath, 'index.html'), html)
-console.log(`[static] Built standalone WebGL page: dist/index.html (${Buffer.byteLength(html)} bytes)`)
+if (!existsSync(namesPath)) { console.error('[static] Missing public/device-names.json'); process.exit(1) }
+writeFileSync(join(distPath, 'device-names.json'), readFileSync(namesPath))
+console.log(`[static] Built standalone page and device dictionary in dist/ (${Buffer.byteLength(html)} bytes)` )
