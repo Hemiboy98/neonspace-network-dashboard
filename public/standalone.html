@@ -214,6 +214,33 @@
     @media(max-width:430px){.brand-sub{font-size:8px}.grid-id{letter-spacing:.02em}.field{min-height:515px}.field-hud{top:12px;left:10px;font-size:8px}.field-controls{top:12px;right:10px;gap:5px}.speed-control{gap:5px;padding:6px;font-size:8px}.speed-control input{width:55px}.sample-tag{font-size:8px}.node-label{max-width:125px;font-size:7px}.legend{left:10px;bottom:12px;gap:8px;font-size:8px}.fleet-list{grid-template-columns:1fr}.fleet-header h2{font-size:14px}.fleet-copy{max-width:230px;line-height:1.5}.scan-progress{font-size:8px}.fleet-item{padding:10px}}
     @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
   </style>
+  <style>
+    .space-objects{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+    .space-objects .planet{animation:planetary-drift 13s ease-in-out infinite;will-change:transform}
+    .space-objects .planet.five{width:19px;height:19px;right:5.5%;top:12%;color:#8fe5ba;background:radial-gradient(circle at 30% 25%,#eafff1,#5dc595 44%,#173940 82%);animation-delay:-5.5s}
+    .planet.one{animation:planetary-drift 16s ease-in-out -3s infinite}
+    .planet.two{animation:planetary-drift 19s ease-in-out -10s infinite}
+    .planet.three{animation:planetary-drift 17s ease-in-out -7s infinite}
+    .planet.four{animation:planetary-drift 21s ease-in-out -14s infinite}
+    @keyframes planetary-drift{0%,100%{translate:0 0}50%{translate:0 -5px}}
+    .black-hole{position:absolute;right:4.2%;bottom:8%;width:76px;height:57px;opacity:.78;filter:drop-shadow(0 0 12px #a65cff55)}
+    .black-hole:before{position:absolute;inset:13px 3px 12px;content:"";border:2px solid #e5a4ff;border-radius:50%;transform:rotate(-20deg) scaleY(.48);box-shadow:0 0 7px #f59cff,0 0 18px #a45cff,0 0 30px #6937bb;animation:accretion-pulse 2.4s ease-in-out infinite}
+    .black-hole:after{position:absolute;inset:16px 6px 15px;content:"";border:1px solid #68e8ff;border-radius:50%;transform:rotate(18deg) scaleY(.34);box-shadow:0 0 13px #68e8ff88;animation:accretion-spin 9s linear infinite}
+    .black-hole-core{position:absolute;left:50%;top:50%;width:23px;height:23px;border-radius:50%;background:radial-gradient(circle,#000 58%,#090510 72%,#7341a4 100%);box-shadow:0 0 0 4px #05040a,0 0 20px 8px #10091b;transform:translate(-50%,-50%)}
+    .black-hole-label{position:absolute;left:50%;top:100%;margin-top:4px;color:#b8a9d2;font-size:6px;letter-spacing:.13em;white-space:nowrap;transform:translateX(-50%);text-shadow:0 0 8px #a65cff}
+    @keyframes accretion-pulse{50%{opacity:.65;filter:brightness(1.45);transform:rotate(-15deg) scaleY(.54)}}
+    @keyframes accretion-spin{to{transform:rotate(378deg) scaleY(.34)}}
+    .meteor{position:absolute;width:42px;height:1px;background:linear-gradient(90deg,transparent,#68e8ff,#fff);opacity:0;box-shadow:0 0 7px #68e8ff;transform:rotate(35deg);animation:meteor-dash 11s linear infinite}
+    .meteor-one{left:15%;top:27%;animation-delay:-3s}
+    .meteor-two{left:58%;top:69%;width:30px;background:linear-gradient(90deg,transparent,#ff58cf,#fff);box-shadow:0 0 7px #ff58cf;animation-delay:-8s;animation-duration:14s}
+    @keyframes meteor-dash{0%,72%,100%{opacity:0;translate:0 0}75%{opacity:.9}82%{opacity:.55;translate:120px 84px}86%{opacity:0;translate:150px 105px}}
+    .ship-flyby{position:absolute;left:-52px;top:22%;width:42px;height:26px;color:#d7faff;opacity:0;filter:drop-shadow(0 0 7px #68e8ff);animation:ship-crossing 24s linear -8s infinite}
+    .flyby-ship{position:relative;z-index:1;width:100%;height:100%;overflow:visible}
+    .ship-wake{position:absolute;left:-32px;top:50%;width:34px;height:1px;background:linear-gradient(90deg,transparent,#ff58cf,#68e8ff);box-shadow:0 0 7px #68e8ff;transform:translateY(-50%)}
+    @keyframes ship-crossing{0%{left:-52px;top:25%;opacity:0;transform:rotate(-8deg) scale(.8)}8%{opacity:.9}48%{top:16%;transform:rotate(2deg) scale(1)}90%{opacity:.9}100%{left:calc(100% + 52px);top:25%;opacity:0;transform:rotate(9deg) scale(.85)}}
+    @media(max-width:760px){.black-hole{right:3%;bottom:8%;transform:scale(.8);transform-origin:bottom right}.space-objects .planet.five{right:3%;top:14%}.meteor-two{display:none}}
+    @media(prefers-reduced-motion:reduce){.space-objects *{animation:none!important;will-change:auto}.black-hole:before,.black-hole:after{filter:none}}
+  </style>
 </head>
 <body>
   <main class="app">
@@ -229,6 +256,15 @@
     <section class="workspace" aria-label="Network observatory">
       <div class="field" id="field" aria-label="Interactive network topology">
         <div class="planet one" aria-hidden="true"></div><div class="planet two" aria-hidden="true"></div><div class="planet three" aria-hidden="true"></div><div class="planet four" aria-hidden="true"></div>
+        <div class="space-objects" aria-hidden="true">
+          <div class="planet five"></div>
+          <div class="black-hole"><span class="black-hole-core"></span><span class="black-hole-label mono">GRAVITY WELL</span></div>
+          <span class="meteor meteor-one"></span><span class="meteor meteor-two"></span>
+          <div class="ship-flyby">
+            <span class="ship-wake"></span>
+            <svg class="flyby-ship" viewBox="0 0 42 26" aria-hidden="true"><path d="M2 13 36 3l-9 10 9 10L2 13Z" fill="currentColor"/><path d="m13 13 8-2-2 2 2 2-8-2Z" fill="#fff"/><path d="M4 13 0 10v6l4-3Z" fill="#ff58cf"/></svg>
+          </div>
+        </div>
         <canvas id="mesh" aria-label="Interactive WebGL network graph. Drag a device to move it and select it to inspect live ICMP reachability and latency." role="img"></canvas>
         <div id="labels" class="labels" aria-hidden="true"></div>
         <div class="field-hud mono">TOPOLOGY FIELD <span style="color:#514b5e">/</span> DRAG TO REPOSITION</div>
@@ -354,8 +390,8 @@
           for(const star of stars){ctx.globalAlpha=star.a*(.7+Math.sin(visualTime*1.6+star.x*25)*.3);ctx.fillStyle='#c9d6ff';ctx.beginPath();ctx.arc(star.x*width,star.y*height,star.r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;
           const all=[...nodes.values()];for(const n of all)if(n!==dragging){const dx=n.anchorX-n.x,dy=n.anchorY-n.y;n.vx+=dx*.0009;n.vy+=dy*.0009;for(const o of all)if(n!==o){const rx=n.x-o.x,ry=n.y-o.y,d=Math.max(16,Math.hypot(rx,ry));if(d<39){n.vx+=rx/d*.016;n.vy+=ry/d*.016}}n.vx*=.984;n.vy*=.984;n.x+=n.vx;n.y+=n.vy;if(n.targetR&&n.r<n.targetR){n.r+=(n.targetR-n.r)*.14;if(n.r>n.targetR-.05)n.r=n.targetR}}
           edges.forEach((e,i)=>{const a=nodes.get(e[0]),b=nodes.get(e[1]);if(!a||!b)return;const dx=b.x-a.x,dy=b.y-a.y,len=Math.max(1,Math.hypot(dx,dy)),nx=-dy/len,ny=dx/len,pulse=(Math.sin(pulseTime*7+i*.83)+1)/2,bend=Math.sin(visualTime*.45+i*.63)*5,cx=(a.x+b.x)/2+nx*bend,cy=(a.y+b.y)/2+ny*bend,wireless=e[3]==='wireless',heavy=e[3]==='core'||e[3]==='wired';
-            for(const strand of [-2.4,-1.2,0,1.2,2.4]){ctx.beginPath();ctx.moveTo(a.x+nx*strand,a.y+ny*strand);ctx.quadraticCurveTo(cx+nx*strand,cy+ny*strand,b.x+nx*strand,b.y+ny*strand);ctx.strokeStyle=e[2];ctx.globalAlpha=heavy?(strand===0?.18+pulse*.77:.035+pulse*.24):strand===0?.07+pulse*.62:.025+pulse*.2;ctx.lineWidth=strand===0?(heavy?2.1:1.5):.55;ctx.shadowColor=e[2];ctx.shadowBlur=strand===0?11:5;if(wireless){ctx.setLineDash([1,7]);ctx.lineDashOffset=-visualTime*16}ctx.stroke();ctx.setLineDash([])}
-            for(let packet=0;packet<4;packet++){const phase=(visualTime*(3.2+i%4*.55)+i*.173+packet*.25)%1,curve=t=>({x:(1-t)**2*a.x+2*(1-t)*t*cx+t*t*b.x,y:(1-t)**2*a.y+2*(1-t)*t*cy+t*t*b.y}),head=curve(phase),tail=curve(Math.max(0,phase-.085));ctx.beginPath();ctx.moveTo(tail.x,tail.y);ctx.lineTo(head.x,head.y);ctx.strokeStyle=e[2];ctx.lineWidth=3.2;ctx.globalAlpha=.72+pulse*.28;ctx.shadowBlur=19;ctx.stroke();ctx.beginPath();ctx.arc(head.x,head.y,3.2,0,Math.PI*2);ctx.fillStyle='#fffaff';ctx.globalAlpha=.98;ctx.fill()}
+            for(const strand of [-2.4,-1.2,0,1.2,2.4]){ctx.beginPath();ctx.moveTo(a.x+nx*strand,a.y+ny*strand);ctx.quadraticCurveTo(cx+nx*strand,cy+ny*strand,b.x+nx*strand,b.y+ny*strand);ctx.strokeStyle=e[2];ctx.globalAlpha=heavy?(strand===0?.06+pulse*.91:.012+pulse*.27):strand===0?.025+pulse*.82:.008+pulse*.24;ctx.lineWidth=strand===0?(heavy?2.1:1.5):.55;ctx.shadowColor=e[2];ctx.shadowBlur=strand===0?11:5;if(wireless){ctx.setLineDash([1,7]);ctx.lineDashOffset=-visualTime*16}ctx.stroke();ctx.setLineDash([])}
+            for(let packet=0;packet<4;packet++){const phase=(visualTime*(3.2+i%4*.55)+i*.173+packet*.25)%1,curve=t=>({x:(1-t)**2*a.x+2*(1-t)*t*cx+t*t*b.x,y:(1-t)**2*a.y+2*(1-t)*t*cy+t*t*b.y}),head=curve(phase),tail=curve(Math.max(0,phase-.085));ctx.beginPath();ctx.moveTo(tail.x,tail.y);ctx.lineTo(head.x,head.y);ctx.strokeStyle=e[2];ctx.lineWidth=3.6;ctx.globalAlpha=.58+pulse*.42;ctx.shadowBlur=24;ctx.stroke();ctx.beginPath();ctx.arc(head.x,head.y,8+pulse*5,0,Math.PI*2);ctx.fillStyle=e[2];ctx.globalAlpha=.1+pulse*.15;ctx.shadowBlur=29;ctx.fill();ctx.beginPath();ctx.arc(head.x,head.y,3.2,0,Math.PI*2);ctx.fillStyle='#fffaff';ctx.globalAlpha=.98;ctx.shadowBlur=9;ctx.fill()}
           });
           for(const n of all){const chosen=selected===n.id,pulse=.72+Math.sin(visualTime*2.4+n.x*.01)*.16,servicePulse=n.serviceHealthy===true?(Math.sin(visualTime*8+n.x*.02)+1)/2:0,r=n.r*(chosen?1.3:1);ctx.beginPath();ctx.arc(n.x,n.y,r*(3.5+servicePulse*1.6),0,Math.PI*2);ctx.fillStyle=rgba(n.color,.12+pulse*.08+servicePulse*.18);ctx.shadowColor=n.color;ctx.shadowBlur=19+servicePulse*9;ctx.fill();ctx.beginPath();ctx.arc(n.x,n.y,r,0,Math.PI*2);ctx.fillStyle='#080a10';ctx.strokeStyle=n.color;ctx.lineWidth=chosen?1.8:1.2;ctx.shadowBlur=chosen?15:8;ctx.fill();ctx.stroke();ctx.beginPath();ctx.arc(n.x+r*.72,n.y-r*.72,2.5,0,Math.PI*2);ctx.fillStyle=statusColor(n.health);ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=8;ctx.fill();if(chosen){ctx.beginPath();ctx.arc(n.x,n.y,r+5+pulse*2,0,Math.PI*2);ctx.strokeStyle=n.color;ctx.globalAlpha=.45;ctx.setLineDash([2,5]);ctx.stroke();ctx.setLineDash([])}}ctx.globalAlpha=1;ctx.shadowBlur=0;updateLabels();
         }
@@ -384,7 +420,7 @@
         const arr=[...nodes.values()];for(const n of arr)if(n!==dragging){const dx=n.anchorX-n.x,dy=n.anchorY-n.y;n.vx+=dx*.0009;n.vy+=dy*.0009;for(const o of arr)if(n!==o){const rx=n.x-o.x,ry=n.y-o.y,d=Math.max(16,Math.hypot(rx,ry));if(d<39){n.vx+=rx/d*.016;n.vy+=ry/d*.016}}n.vx*=.984;n.vy*=.984;n.x+=n.vx;n.y+=n.vy;if(n.targetR&&n.r<n.targetR){n.r+=(n.targetR-n.r)*.14;if(n.r>n.targetR-.05)n.r=n.targetR}}
         function line(x1,y1,x2,y2,rgba){lineP.push(x1,y1,x2,y2);lineC.push(...rgba,...rgba)}
         function curve(a,b,index,t){const dx=b.x-a.x,dy=b.y-a.y,len=Math.max(1,Math.hypot(dx,dy)),nx=-dy/len,ny=dx/len,curveBend=Math.sin(t*.45+index*.63)*5,ctrl={x:(a.x+b.x)/2+nx*curveBend,y:(a.y+b.y)/2+ny*curveBend};return phase=>({x:(1-phase)**2*a.x+2*(1-phase)*phase*ctrl.x+phase**2*b.x,y:(1-phase)**2*a.y+2*(1-phase)*phase*ctrl.y+phase**2*b.y})}
-        edges.forEach((e,i)=>{const a=nodes.get(e[0]),b=nodes.get(e[1]);if(!a||!b)return;const pulse=(Math.sin(pulseTime*7+i*.83)+1)/2,point=curve(a,b,i,visualTime),wireless=e[3]==='wireless',heavy=e[3]==='core'||e[3]==='wired';for(const strand of [-2.4,-1.2,0,1.2,2.4]){let prev=null;for(let s=0;s<=12;s++){const q=point(s/12),dx=b.x-a.x,dy=b.y-a.y,len=Math.max(1,Math.hypot(dx,dy)),x=q.x-dy/len*strand,y=q.y+dx/len*strand;if(prev&&(!wireless||s%2===0))line(prev.x,prev.y,x,y,color(e[2],heavy?(strand===0?.18+pulse*.77:.035+pulse*.24):strand===0?.07+pulse*.62:.025+pulse*.2));prev={x,y}}}for(let packet=0;packet<4;packet++){const phase=(visualTime*(3.2+i%4*.55)+i*.173+packet*.25)%1,head=point(phase),tail=point(Math.max(0,phase-.085));line(tail.x,tail.y,head.x,head.y,color(e[2],.95));dotP.push(head.x,head.y);dotC.push(...color(e[2],.72+pulse*.28));dotS.push(9.2);dotP.push(head.x,head.y);dotC.push(1,1,.98,.95);dotS.push(3.2)}});
+        edges.forEach((e,i)=>{const a=nodes.get(e[0]),b=nodes.get(e[1]);if(!a||!b)return;const pulse=(Math.sin(pulseTime*7+i*.83)+1)/2,point=curve(a,b,i,visualTime),wireless=e[3]==='wireless',heavy=e[3]==='core'||e[3]==='wired';for(const strand of [-2.4,-1.2,0,1.2,2.4]){let prev=null;for(let s=0;s<=12;s++){const q=point(s/12),dx=b.x-a.x,dy=b.y-a.y,len=Math.max(1,Math.hypot(dx,dy)),x=q.x-dy/len*strand,y=q.y+dx/len*strand;if(prev&&(!wireless||s%2===0))line(prev.x,prev.y,x,y,color(e[2],heavy?(strand===0?.06+pulse*.91:.012+pulse*.27):strand===0?.025+pulse*.82:.008+pulse*.24));prev={x,y}}}for(let packet=0;packet<4;packet++){const phase=(visualTime*(3.2+i%4*.55)+i*.173+packet*.25)%1,head=point(phase),tail=point(Math.max(0,phase-.085));line(tail.x,tail.y,head.x,head.y,color(e[2],.38+pulse*.58));dotP.push(head.x,head.y);dotC.push(...color(e[2],.12+pulse*.18));dotS.push(24);dotP.push(head.x,head.y);dotC.push(...color(e[2],.4+pulse*.48));dotS.push(12);dotP.push(head.x,head.y);dotC.push(...color(e[2],.72+pulse*.28));dotS.push(9.2);dotP.push(head.x,head.y);dotC.push(1,1,.98,.95);dotS.push(3.2)}});
         lineDraw(lineP,lineC);for(const n of arr){const p=.72+Math.sin(visualTime*2.4+n.x*.01)*.16,servicePulse=n.serviceHealthy===true?(Math.sin(pulseTime*5.4+n.x*.02)+1)/2:0,selectedNode=selected===n.id;dotP.push(n.x,n.y);dotC.push(...color(n.color,.3+servicePulse*.42));dotS.push(n.r*(selectedNode?7:5)*(1+servicePulse*.45));dotP.push(n.x,n.y);dotC.push(...color(n.color,.92));dotS.push(n.r*(selectedNode?2.5:1.9));dotP.push(n.x+n.r*.7,n.y-n.r*.7);dotC.push(...color(statusColor(n.health),.98));dotS.push(4.3);if(selectedNode){dotP.push(n.x,n.y);dotC.push(...color(n.color,.38*p));dotS.push(n.r*4)}}dotDraw(dotP,dotC,dotS);updateLabels()}
       function point(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
       function nearest(p){let best=null,distance=22;for(const n of nodes.values()){const d=Math.hypot(n.x-p.x,n.y-p.y);if(d<distance){best=n;distance=d}}return best}
