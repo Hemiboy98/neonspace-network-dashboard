@@ -222,6 +222,7 @@
     .planet.two{--drift-x:-24vw;--drift-y:13px;animation:planetary-sway 540s cubic-bezier(.4,0,.6,1) -10s infinite}
     .planet.three{--drift-x:18vw;--drift-y:-11px;animation:planetary-sway 510s cubic-bezier(.4,0,.6,1) -7s infinite}
     .planet.four{--drift-x:-21vw;--drift-y:12px;animation:planetary-sway 600s cubic-bezier(.4,0,.6,1) -14s infinite}
+    .space-objects .planet,.planet.one,.planet.two,.planet.three,.planet.four{animation:none!important;will-change:auto}
     @keyframes planetary-sway{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(var(--drift-x),var(--drift-y),0)}}
     @keyframes planetary-drift{0%,100%{translate:0 0}50%{translate:var(--drift-x) var(--drift-y)}}
     .sun{position:absolute;left:80%;top:49%;width:46px;height:46px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#fff8d2 0 9%,#ffe78b 19%,#ffba45 48%,#f47a2d 73%,#a83225 100%);box-shadow:0 0 12px 4px #ffb54588,0 0 34px 12px #f4772d55,0 0 70px 22px #e7503530;animation:solar-pulse 72s ease-in-out infinite}
