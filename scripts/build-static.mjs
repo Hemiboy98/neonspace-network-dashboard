@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { compileDeviceNameMatrix, readDeviceNameMatrix } from './compile-device-matrix.mjs'
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const sourcePath = join(projectRoot, 'public', 'standalone.html')
@@ -12,7 +13,14 @@ if (!existsSync(sourcePath)) {
   process.exit(1)
 }
 
-const html = readFileSync(sourcePath, 'utf8')
+if (!existsSync(namesPath)) {
+  console.error('[static] Missing public/device-names.json')
+  process.exit(1)
+}
+
+const matrix = readDeviceNameMatrix(namesPath)
+const sourceHtml = readFileSync(sourcePath, 'utf8')
+const html = compileDeviceNameMatrix(sourceHtml, matrix)
 if (!html.includes('<canvas id="mesh"') || !html.includes("getContext('webgl'")) {
   console.error('[static] Source is missing the WebGL network renderer.')
   process.exit(1)
@@ -36,6 +44,6 @@ for (const entry of readdirSync(distPath)) {
 }
 
 writeFileSync(join(distPath, 'index.html'), html)
-if (!existsSync(namesPath)) { console.error('[static] Missing public/device-names.json'); process.exit(1) }
-writeFileSync(join(distPath, 'device-names.json'), readFileSync(namesPath))
-console.log(`[static] Built standalone page and device dictionary in dist/ (${Buffer.byteLength(html)} bytes)` )
+writeFileSync(join(distPath, 'standalone.html'), html)
+writeFileSync(join(distPath, 'device-names.json'), `${JSON.stringify(matrix, null, 2)}\n`)
+console.log(`[static] Built standalone page and device dictionary in dist/ (${Buffer.byteLength(html)} bytes)`)

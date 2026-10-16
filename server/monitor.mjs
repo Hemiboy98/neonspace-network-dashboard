@@ -37,6 +37,7 @@ import { lookup as dnsLookup, resolve4, reverse } from 'node:dns/promises'
 import { networkInterfaces } from 'node:os'
 import dgram from 'node:dgram'
 import { loadIntegrationConfig } from './integration-config.mjs'
+import { readDeviceNameMatrix } from './device-names.mjs'
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
@@ -74,8 +75,13 @@ const TAILSCALE_PROBE_PORT = Number(process.env.TAILSCALE_PROBE_PORT || 8006)
 const TAILSCALE_LAST_SEEN_GRACE_MS = Number(process.env.TAILSCALE_LAST_SEEN_GRACE_MS || 120_000)
 const DASHBOARD_TOKEN = process.env.DASHBOARD_TOKEN || ''
 const DEVICE_NAMES_PATH = process.env.DEVICE_NAMES_PATH || '/app/public/device-names.json'
-let DEVICE_NAMES = {}
-try { DEVICE_NAMES = JSON.parse(readFileSync(DEVICE_NAMES_PATH, 'utf8')) } catch (e) { console.error(`[monitor] device dictionary unavailable: ${e.message}`) }
+let DEVICE_NAMES
+try {
+  DEVICE_NAMES = readDeviceNameMatrix(DEVICE_NAMES_PATH)
+} catch (error) {
+  console.error(`[monitor] device dictionary unavailable: ${error.message}`)
+  process.exit(1)
+}
 
 // ─── Anchor definitions ───────────────────────────────────────────────────────
 

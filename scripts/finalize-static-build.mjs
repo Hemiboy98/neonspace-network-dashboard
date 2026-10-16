@@ -17,8 +17,9 @@
  * into `dist/` (never delete), so a legacy read-only `_redirects` is tolerated. Nothing
  * injects that file any more and nothing executes it — see skills/blink-hosting.
  */
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { compileDeviceNameMatrix, readDeviceNameMatrix } from './compile-device-matrix.mjs'
 
 const SRC = '.vite-out/client'
 const DEST = 'dist'
@@ -47,6 +48,21 @@ for (const entry of readdirSync(SRC)) {
       process.exit(1)
     }
   }
+}
+
+const standalonePath = join(DEST, 'standalone.html')
+const matrixPath = join(DEST, 'device-names.json')
+if (!existsSync(standalonePath) || !existsSync(matrixPath)) {
+  console.error('[finalize] standalone.html or device-names.json missing from the static assets.')
+  process.exit(1)
+}
+try {
+  const matrix = readDeviceNameMatrix(matrixPath)
+  const html = compileDeviceNameMatrix(readFileSync(standalonePath, 'utf8'), matrix)
+  writeFileSync(standalonePath, html)
+} catch (error) {
+  console.error(`[finalize] Could not compile the device-name matrix: ${error.message}`)
+  process.exit(1)
 }
 
 rmSync('.vite-out', { recursive: true, force: true })

@@ -4,6 +4,8 @@ WORKDIR /site
 COPY public/standalone.html public/standalone.html
 COPY public/device-names.json public/device-names.json
 COPY scripts/build-static.mjs scripts/build-static.mjs
+COPY scripts/compile-device-matrix.mjs scripts/compile-device-matrix.mjs
+COPY server/device-names.mjs server/device-names.mjs
 RUN node scripts/build-static.mjs
 
 # Runtime dependencies are system tools only: Node monitor, Nginx, ping, SMART tooling.
@@ -16,7 +18,7 @@ WORKDIR /app
 COPY --from=static-build /site/dist/ /usr/share/nginx/html/
 COPY public/device-names.json /app/public/device-names.json
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
-COPY server/monitor.mjs server/entrypoint.mjs server/integration-config.mjs ./
+COPY server/monitor.mjs server/entrypoint.mjs server/integration-config.mjs server/device-names.mjs ./
 
 EXPOSE 8086
 
