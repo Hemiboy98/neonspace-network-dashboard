@@ -13,7 +13,7 @@ WORKDIR /app
 COPY --from=static-build /site/dist/ /usr/share/nginx/html/
 COPY public/device-names.json /app/public/device-names.json
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
-COPY server/monitor.mjs server/entrypoint.mjs ./
+COPY server/monitor.mjs server/entrypoint.mjs server/integration-config.mjs ./
 
 EXPOSE 8086
 

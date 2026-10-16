@@ -36,6 +36,7 @@ import { connect as tlsConnect } from 'node:tls'
 import { lookup as dnsLookup, resolve4, reverse } from 'node:dns/promises'
 import { networkInterfaces } from 'node:os'
 import dgram from 'node:dgram'
+import { loadIntegrationConfig } from './integration-config.mjs'
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
@@ -54,10 +55,11 @@ const THROUGHPUT_INTERVAL = Number(process.env.THROUGHPUT_INTERVAL_MS || 5_000)
 const WEATHER_INTERVAL = Number(process.env.WEATHER_INTERVAL_MS || 600_000)
 const PORT = Number(process.env.MONITOR_PORT || 8765)
 
-const PVE_API_TOKEN = process.env.PVE_API_TOKEN || ''
-const PVE_HOST = process.env.PVE_HOST || '192.168.4.200'
-const PLEX_HOST = process.env.PLEX_HOST || '192.168.4.49:32400'
-const PLEX_TOKEN = process.env.PLEX_TOKEN || ''
+const integrationConfig = loadIntegrationConfig(process.env.INTEGRATION_CONFIG_DIR || '/run/neonspace-config')
+const PVE_API_TOKEN = process.env.PVE_API_TOKEN?.trim() || integrationConfig.PVE_API_TOKEN || ''
+const PVE_HOST = process.env.PVE_HOST?.trim() || integrationConfig.PVE_HOST || '192.168.4.200'
+const PLEX_HOST = process.env.PLEX_HOST?.trim() || integrationConfig.PLEX_HOST || '192.168.4.49:32400'
+const PLEX_TOKEN = process.env.PLEX_TOKEN?.trim() || integrationConfig.PLEX_TOKEN || ''
 const GITHUB_REPO = process.env.GITHUB_REPO || 'Hemiboy98/neonspace-network-dashboard'
 const WEATHER_LAT = process.env.WEATHER_LAT
 const WEATHER_LON = process.env.WEATHER_LON

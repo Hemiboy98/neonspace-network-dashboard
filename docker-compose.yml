@@ -12,6 +12,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /dev:/dev:ro
+      # JSON integration credentials live outside the repository and are never served by nginx.
+      - ${NEONSPACE_PRIVATE_CONFIG_DIR:-../neonspace-private-config}:/run/neonspace-config:ro
     environment:
       # Compose reads .env for interpolation; map each value explicitly into the container.
       SCAN_INTERVAL_MS: "${SCAN_INTERVAL_MS:-10000}"
@@ -31,6 +33,7 @@ services:
       PVE_API_TOKEN: "${PVE_API_TOKEN:-}"
       PLEX_HOST: "${PLEX_HOST:-192.168.4.49:32400}"
       PLEX_TOKEN: "${PLEX_TOKEN:-}"
+      INTEGRATION_CONFIG_DIR: "/run/neonspace-config"
       DASHBOARD_TOKEN: "${DASHBOARD_TOKEN:-}"
       WOL_MAC: "${WOL_MAC:-}"
       WOL_BROADCAST: "${WOL_BROADCAST:-192.168.4.255}"
