@@ -224,6 +224,10 @@
     .planet.four{--drift-x:-21vw;--drift-y:12px;animation:planetary-sway 360s cubic-bezier(.4,0,.6,1) -14s infinite}
     @keyframes planetary-sway{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(var(--drift-x),var(--drift-y),0)}}
     @keyframes planetary-drift{0%,100%{translate:0 0}50%{translate:var(--drift-x) var(--drift-y)}}
+    .sun{position:absolute;left:80%;top:49%;width:46px;height:46px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#fff8d2 0 9%,#ffe78b 19%,#ffba45 48%,#f47a2d 73%,#a83225 100%);box-shadow:0 0 12px 4px #ffb54588,0 0 34px 12px #f4772d55,0 0 70px 22px #e7503530;animation:solar-pulse 7s ease-in-out infinite}
+    .sun:before{position:absolute;inset:-8px;content:"";border:1px solid #ffd989aa;border-radius:50%;box-shadow:0 0 18px 3px #ffb54555;animation:solar-pulse 9s ease-in-out -2s infinite reverse}
+    .sun:after{position:absolute;inset:8px;border-radius:50%;content:"";background:radial-gradient(circle at 32% 32%,#fff9dd 0,transparent 58%);opacity:.8}
+    @keyframes solar-pulse{50%{transform:scale(1.08);filter:brightness(1.16)}}
     .black-hole{--disk-primary:#e5a4ff;--disk-glow:#a45cff;--disk-secondary:#68e8ff;--ring-glow:#68e8ff88;--core-accretion:#7341a4;--drift-x:-5vw;--drift-y:-12px;position:absolute;right:4.2%;bottom:8%;width:76px;height:57px;opacity:.78;filter:drop-shadow(0 0 12px color-mix(in srgb,var(--disk-glow) 36%,transparent));animation:planetary-drift 38s ease-in-out infinite;will-change:translate}
     .black-hole:before{position:absolute;inset:13px 3px 12px;content:"";border:2px solid var(--disk-primary);border-radius:50%;transform:rotate(-20deg) scaleY(.48);box-shadow:0 0 7px var(--disk-primary),0 0 18px var(--disk-glow),0 0 30px color-mix(in srgb,var(--disk-glow) 58%,transparent);animation:accretion-pulse 5.5s ease-in-out infinite}
     .black-hole:after{position:absolute;inset:16px 6px 15px;content:"";border:1px solid var(--disk-secondary);border-radius:50%;transform:rotate(18deg) scaleY(.34);box-shadow:0 0 13px var(--ring-glow);animation:accretion-spin 18s linear infinite}
@@ -261,6 +265,7 @@
         <div class="planet one" aria-hidden="true"></div><div class="planet two" aria-hidden="true"></div><div class="planet three" aria-hidden="true"></div><div class="planet four" aria-hidden="true"></div>
         <div class="space-objects" aria-hidden="true">
           <div class="planet five"></div>
+          <div class="sun"></div>
           <div class="black-hole"><span class="black-hole-core"></span><span class="black-hole-label mono">GRAVITY WELL</span></div>
           <div class="black-hole cyan"><span class="black-hole-core"></span><span class="black-hole-label mono">CYAN SINGULARITY</span></div>
           <div class="black-hole amber"><span class="black-hole-core"></span><span class="black-hole-label mono">AMBER SINGULARITY</span></div>
