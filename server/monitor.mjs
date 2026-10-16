@@ -68,6 +68,10 @@ const WOL_BROADCAST = process.env.WOL_BROADCAST || '192.168.4.255'
 const SSL_TARGETS = (process.env.SSL_TARGETS || '192.168.4.47:8006,192.168.4.200:8006').split(',').filter(Boolean)
 const DNS_TARGETS = (process.env.DNS_TARGETS || 'google.com,cloudflare.com,github.com,plex.tv').split(',').filter(Boolean)
 const DOCKER_SOCKET = process.env.DOCKER_SOCKET || '/var/run/docker.sock'
+const TAILSCALE_SOCKET = process.env.TAILSCALE_SOCKET?.trim() || '/var/run/tailscale/tailscaled.sock'
+const TAILSCALE_INTERFACE = process.env.TAILSCALE_INTERFACE?.trim() || 'tailscale0'
+const TAILSCALE_PROBE_PORT = Number(process.env.TAILSCALE_PROBE_PORT || 8006)
+const TAILSCALE_LAST_SEEN_GRACE_MS = Number(process.env.TAILSCALE_LAST_SEEN_GRACE_MS || 120_000)
 const DASHBOARD_TOKEN = process.env.DASHBOARD_TOKEN || ''
 const DEVICE_NAMES_PATH = process.env.DEVICE_NAMES_PATH || '/app/public/device-names.json'
 let DEVICE_NAMES = {}
@@ -225,6 +229,80 @@ function checkPort(ip, port, timeoutMs = 2000) {
   })
 }
 
+function readTailscaleStatus(timeoutMs = 1800) {
+  return new Promise((resolve, reject) => {
+    let settled = false
+    let timer
+    let body = ''
+    const finish = (error, value) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      if (error) reject(error)
+      else resolve(value)
+    }
+    let req
+    try {
+      req = httpRequest({
+        socketPath: TAILSCALE_SOCKET,
+        path: '/localapi/v0/status?peers=true',
+        method: 'GET',
+        headers: { Host: 'local-tailscaled.sock' },
+      }, (response) => {
+        if (response.statusCode !== 200) {
+          response.resume()
+          finish(new Error(`Tailscale LocalAPI returned HTTP ${response.statusCode}`))
+          return
+        }
+        response.setEncoding('utf8')
+        response.on('data', (chunk) => {
+          body += chunk
+          if (Buffer.byteLength(body) > 1_000_000) {
+            response.destroy(new Error('Tailscale LocalAPI response exceeded 1 MB'))
+          }
+        })
+        response.once('end', () => {
+          try { finish(null, JSON.parse(body)) }
+          catch { finish(new Error('Tailscale LocalAPI returned invalid JSON')) }
+        })
+        response.once('error', (error) => finish(error))
+      })
+    } catch (error) {
+      finish(error)
+      return
+    }
+    timer = setTimeout(() => {
+      const error = new Error(`Tailscale LocalAPI timed out after ${timeoutMs} ms`)
+      error.code = 'ETIMEDOUT'
+      req.destroy(error)
+    }, timeoutMs)
+    req.once('error', (error) => finish(error))
+    req.end()
+  })
+}
+
+function findTailscalePeer(status, ip) {
+  if ((status.Self?.TailscaleIPs || []).includes(ip)) {
+    return { online: status.BackendState === 'Running', self: true }
+  }
+  const peer = Object.values(status.Peer || {}).find((entry) => (entry.TailscaleIPs || []).includes(ip))
+  return peer ? { online: peer.Online === true, self: false, hostname: peer.HostName || null, lastSeen: peer.LastSeen || null } : null
+}
+
+function inspectTailscaleInterface() {
+  if (!/^[A-Za-z0-9_.:-]+$/.test(TAILSCALE_INTERFACE)) return { present: false, up: false, address: null }
+  const path = `/sys/class/net/${TAILSCALE_INTERFACE}`
+  if (!existsSync(path)) return { present: false, up: false, address: null }
+  try {
+    const operstate = readFileSync(`${path}/operstate`, 'utf8').trim()
+    const flags = Number.parseInt(readFileSync(`${path}/flags`, 'utf8').trim(), 16)
+    const address = (networkInterfaces()[TAILSCALE_INTERFACE] || []).find((entry) => entry.family === 'IPv4' && entry.address.startsWith('100.'))?.address || null
+    return { present: true, up: operstate === 'up' || (Number.isFinite(flags) && (flags & 1) === 1), address }
+  } catch {
+    return { present: true, up: false, address: null }
+  }
+}
+
 // ─── Status determination ────────────────────────────────────────────────────
 
 function makeStatus(reachable, latencyMs, error, macAddress = null) {
@@ -236,6 +314,7 @@ function makeStatus(reachable, latencyMs, error, macAddress = null) {
 // ─── Anchor heartbeat ─────────────────────────────────────────────────────────
 
 async function probe(node, mode) {
+  if (node.ip.startsWith('100.')) return probeTailscale(node)
   const result = await ping(node.ip)
   const hostname = result.reachable ? await reverseHostname(node.ip) : null
   const previous = nodes.get(node.ip)
@@ -250,6 +329,80 @@ async function probe(node, mode) {
   if (mode === 'anchor' || changed || result.reachable) {
     const msg = result.error ? `Probe unavailable: ${result.error}` : result.reachable ? `ICMP response in ${result.latencyMs === null ? 'under 1 ms' : `${result.latencyMs.toFixed(1)} ms`}` : macAddress ? 'ARP neighbor responded; ICMP timed out' : 'No ICMP response'
     addLog({ name: record.name, ip: record.ip, severity: result.error ? 'warn' : result.reachable ? status === 'degraded' ? 'warn' : 'ok' : 'warn', message: msg })
+  }
+  return record
+}
+
+async function probeTailscale(node) {
+  const previous = nodes.get(node.ip)
+  let daemonStatus = null
+  let daemonError = null
+  try { daemonStatus = await readTailscaleStatus() }
+  catch (error) { daemonError = error }
+
+  const peer = daemonStatus ? findTailscalePeer(daemonStatus, node.ip) : null
+  const tunnel = inspectTailscaleInterface()
+  let icmp = null
+  let service = null
+  let status = 'unknown'
+  let latencyMs = null
+  let evidence = ''
+  let reachable = false
+
+  if (peer?.online) {
+    status = 'online'
+    reachable = true
+    evidence = `Tailscale LocalAPI reports the peer online${peer.hostname ? ` (${peer.hostname})` : ''}`
+  } else {
+    // A failed LocalAPI call is common in unprivileged containers. Probe the
+    // actual 100.x peer address instead of trusting a mapped daemon port.
+    [icmp, service] = await Promise.all([
+      ping(node.ip),
+      checkPort(node.ip, TAILSCALE_PROBE_PORT, 1500),
+    ])
+    if (icmp.reachable) {
+      status = makeStatus(true, icmp.latencyMs, null)
+      latencyMs = icmp.latencyMs
+      reachable = true
+      evidence = `Direct Tailscale peer ICMP response in ${icmp.latencyMs === null ? 'under 1 ms' : `${icmp.latencyMs.toFixed(1)} ms`}`
+    } else if (service.open) {
+      status = 'online'
+      latencyMs = service.latencyMs
+      reachable = true
+      evidence = `Direct Tailscale peer responded on TCP port ${TAILSCALE_PROBE_PORT}`
+    } else if (daemonStatus?.BackendState && daemonStatus.BackendState !== 'Running') {
+      status = 'offline'
+      evidence = `Tailscale LocalAPI reports backend state ${daemonStatus.BackendState}`
+    } else if (peer && !peer.online) {
+      status = 'offline'
+      evidence = 'Tailscale LocalAPI reports the peer offline; direct ICMP and TCP probes found no response'
+    } else {
+      const lastSeenAge = previous?.lastSeen ? Date.now() - Date.parse(previous.lastSeen) : Infinity
+      if (previous && ['online', 'degraded'].includes(previous.status) && lastSeenAge <= TAILSCALE_LAST_SEEN_GRACE_MS) {
+        status = previous.status
+        evidence = 'Tailscale status access is unavailable; retaining the recently verified peer state'
+      } else if (tunnel.up) {
+        evidence = `Local Tailscale interface ${TAILSCALE_INTERFACE} is up, but this container cannot verify the remote peer${daemonError ? ` (${daemonError.code || daemonError.message})` : ''}`
+      } else {
+        evidence = `Tailscale peer could not be verified; leaving status unknown${daemonError ? ` (${daemonError.code || daemonError.message})` : ''}`
+      }
+    }
+  }
+
+  const at = new Date().toISOString()
+  const record = {
+    ...(previous || node), ...node,
+    status,
+    latencyMs,
+    lastChecked: at,
+    lastSeen: reachable ? at : previous?.lastSeen || null,
+    evidence,
+    tailscale: { daemonAvailable: Boolean(daemonStatus), backendState: daemonStatus?.BackendState || null, interfaceUp: tunnel.up, interfaceAddress: tunnel.address },
+  }
+  nodes.set(node.ip, record)
+  broadcast({ type: 'node', node: record })
+  if (!previous || previous.status !== status || reachable) {
+    addLog({ name: record.name, ip: record.ip, severity: status === 'online' ? 'ok' : status === 'unknown' || status === 'offline' ? 'warn' : 'info', message: evidence })
   }
   return record
 }
