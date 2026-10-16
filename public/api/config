@@ -1,0 +1,12 @@
+{
+  "mode": "static-preview",
+  "scannerAvailable": false,
+  "controlEnabled": false,
+  "tokenRequired": false,
+  "wolEnabled": false,
+  "wolMacConfigured": false,
+  "dockerAvailable": false,
+  "weatherConfigured": false,
+  "plexConfigured": false,
+  "proxmoxConfigured": false
+}
