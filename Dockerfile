@@ -2,6 +2,7 @@
 FROM node:22-alpine AS static-build
 WORKDIR /site
 COPY public/standalone.html public/standalone.html
+COPY public/device-names.json public/device-names.json
 COPY scripts/build-static.mjs scripts/build-static.mjs
 RUN node scripts/build-static.mjs
 
