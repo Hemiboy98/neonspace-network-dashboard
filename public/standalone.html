@@ -216,12 +216,13 @@
   </style>
   <style>
     .space-objects{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
-    .space-objects .planet{--drift-x:5vw;--drift-y:-14px;animation:planetary-drift 30s ease-in-out infinite;will-change:translate}
-    .space-objects .planet.five{width:19px;height:19px;right:5.5%;top:12%;color:#8fe5ba;background:radial-gradient(circle at 30% 25%,#eafff1,#5dc595 44%,#173940 82%);--drift-x:-6vw;--drift-y:18px;animation-delay:-5.5s}
-    .planet.one{--drift-x:7vw;--drift-y:-16px;animation:planetary-drift 30s ease-in-out -3s infinite}
-    .planet.two{--drift-x:-8vw;--drift-y:13px;animation:planetary-drift 36s ease-in-out -10s infinite}
-    .planet.three{--drift-x:6vw;--drift-y:-11px;animation:planetary-drift 34s ease-in-out -7s infinite}
-    .planet.four{--drift-x:-7vw;--drift-y:12px;animation:planetary-drift 40s ease-in-out -14s infinite}
+    .space-objects .planet{--drift-x:15vw;--drift-y:-14px;animation:planetary-sway 270s cubic-bezier(.4,0,.6,1) infinite;will-change:transform;backface-visibility:hidden}
+    .space-objects .planet.five{width:19px;height:19px;right:5.5%;top:12%;color:#8fe5ba;background:radial-gradient(circle at 30% 25%,#eafff1,#5dc595 44%,#173940 82%);--drift-x:-18vw;--drift-y:18px;animation-duration:300s;animation-delay:-5.5s}
+    .planet.one{--drift-x:21vw;--drift-y:-16px;animation:planetary-sway 270s cubic-bezier(.4,0,.6,1) -3s infinite}
+    .planet.two{--drift-x:-24vw;--drift-y:13px;animation:planetary-sway 324s cubic-bezier(.4,0,.6,1) -10s infinite}
+    .planet.three{--drift-x:18vw;--drift-y:-11px;animation:planetary-sway 306s cubic-bezier(.4,0,.6,1) -7s infinite}
+    .planet.four{--drift-x:-21vw;--drift-y:12px;animation:planetary-sway 360s cubic-bezier(.4,0,.6,1) -14s infinite}
+    @keyframes planetary-sway{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(var(--drift-x),var(--drift-y),0)}}
     @keyframes planetary-drift{0%,100%{translate:0 0}50%{translate:var(--drift-x) var(--drift-y)}}
     .black-hole{--disk-primary:#e5a4ff;--disk-glow:#a45cff;--disk-secondary:#68e8ff;--ring-glow:#68e8ff88;--core-accretion:#7341a4;--drift-x:-5vw;--drift-y:-12px;position:absolute;right:4.2%;bottom:8%;width:76px;height:57px;opacity:.78;filter:drop-shadow(0 0 12px color-mix(in srgb,var(--disk-glow) 36%,transparent));animation:planetary-drift 38s ease-in-out infinite;will-change:translate}
     .black-hole:before{position:absolute;inset:13px 3px 12px;content:"";border:2px solid var(--disk-primary);border-radius:50%;transform:rotate(-20deg) scaleY(.48);box-shadow:0 0 7px var(--disk-primary),0 0 18px var(--disk-glow),0 0 30px color-mix(in srgb,var(--disk-glow) 58%,transparent);animation:accretion-pulse 5.5s ease-in-out infinite}
