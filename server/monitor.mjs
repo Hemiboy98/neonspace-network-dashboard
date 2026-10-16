@@ -63,7 +63,7 @@ const WEATHER_LAT = process.env.WEATHER_LAT
 const WEATHER_LON = process.env.WEATHER_LON
 const WOL_MAC = process.env.WOL_MAC || ''
 const WOL_BROADCAST = process.env.WOL_BROADCAST || '192.168.4.255'
-const SSL_TARGETS = (process.env.SSL_TARGETS || '192.168.4.200:8006,192.168.4.33:7575,192.168.4.49:32400').split(',').filter(Boolean)
+const SSL_TARGETS = (process.env.SSL_TARGETS || '192.168.4.47:8006,192.168.4.200:8006').split(',').filter(Boolean)
 const DNS_TARGETS = (process.env.DNS_TARGETS || 'google.com,cloudflare.com,github.com,plex.tv').split(',').filter(Boolean)
 const DOCKER_SOCKET = process.env.DOCKER_SOCKET || '/var/run/docker.sock'
 const DASHBOARD_TOKEN = process.env.DASHBOARD_TOKEN || ''
@@ -82,7 +82,8 @@ const portChecks = [
   { ip: '192.168.4.49', label: 'Plex Streaming', port: 32400, anchor: 'plex' },
 ]
 
-const portMatrixTargets = [...new Map(portChecks.map((pc) => [pc.ip, { ip: pc.ip, label: anchors.find((n) => n.ip === pc.ip)?.name || pc.label }])).values()]
+const portMatrixIps = ['192.168.4.200', '192.168.4.33', '192.168.4.48', '192.168.4.49', '192.168.4.47']
+const portMatrixTargets = portMatrixIps.map((ip) => ({ ip, label: anchors.find((node) => node.ip === ip)?.name || ip }))
 const portMatrixPorts = [22, 80, 443, 7575, 8006, 32400]
 
 const knownIps = new Set(anchors.map((n) => n.ip))
@@ -102,7 +103,7 @@ const logs = []
 
 const state = {
   portMatrix: {},       // ip -> { port: { open, latencyMs } }
-  wan: { lossPct: 0, rttMs: null, drops: 0, samples: [], history: [] },
+  wan: { lossPct: null, rttMs: null, drops: 0, samples: [], history: [] },
   ssl: [],              // [{ host, port, daysLeft, issuer, valid }]
   dns: [],              // [{ domain, latencyMs, resolved }]
   docker: { containers: [], events: [], stats: {} },
@@ -149,7 +150,7 @@ function ping(ip, count = 1) {
     child.once('close', (code) => {
       const latMatch = output.match(/time[=<]([\d.]+)\s*ms/i)
       const lossMatch = output.match(/(\d+)%\s*packet\s*loss/i)
-      const rttMatch = output.match(/rtt\s*[=/]?\s*([\d.]+)\/([\d.]+)\/([\d.]+)/i)
+      const rttMatch = output.match(/\b(?:rtt|round-trip)\b[^\n=]*=\s*([\d.]+)\/([\d.]+)\/([\d.]+)/i)
       finish({
         reachable: code === 0,
         latencyMs: latMatch ? Number(latMatch[1]) : null,
@@ -310,7 +311,9 @@ async function runPortChecks() {
     const node = nodes.get(pc.ip)
     if (node) {
       node.portState = { ...(node.portState || {}), [pc.port]: { open: result.open, latencyMs: result.latencyMs, checkedAt: at } }
-      node.serviceHealthy = Object.values(node.portState).some((port) => port === true || port?.open === true)
+      const checkedServices = Object.values(node.portState).map((port) => port?.open).filter((open) => typeof open === 'boolean')
+      node.serviceHealthy = checkedServices.length ? checkedServices.every(Boolean) : null
+      node.serviceStatus = node.serviceHealthy === null ? 'unknown' : node.serviceHealthy ? 'online' : 'offline'
       nodes.set(pc.ip, node)
       broadcast({ type: 'node', node })
     }
@@ -340,9 +343,10 @@ async function runWanDiagnostics() {
   if (state.wan.history.length > 120) state.wan.history.shift()
   state.wan.lossPct = result.lossPct
   state.wan.rttMs = sample.rttMs
-  if (result.lossPct > 0) state.wan.drops += 1
+  const packetsDropped = Math.round((5 * result.lossPct) / 100)
+  state.wan.drops += packetsDropped
   broadcast({ type: 'wan', wan: { ...sample, totalDrops: state.wan.drops, history: state.wan.history.slice(-30) } })
-  if (result.lossPct >= 40) addLog({ name: 'WAN Diagnostics', ip: '8.8.8.8', severity: 'warn', message: `Packet loss ${result.lossPct}% — ISP instability detected` })
+  if (packetsDropped > 0) addLog({ name: 'WAN Diagnostics', ip: '8.8.8.8', severity: 'warn', message: `Five-packet burst lost ${packetsDropped}/5 packets (${result.lossPct}% loss)` })
 }
 
 // ─── SSL certificate check ────────────────────────────────────────────────────
@@ -429,7 +433,7 @@ async function runDockerMonitor() {
     const memLimit = stats?.memory_stats?.limit || 0
     const memPct = memLimit > 0 ? (memUsage / memLimit) * 100 : 0
     return {
-      id: c.Id, name, image: c.Image, status: c.Status, state: c.State,
+      id: c.Id, name, image: c.Image, imageId: c.ImageID, status: c.Status, state: c.State,
       cpuPct: Number(cpuPct.toFixed(2)), memUsage, memLimit, memPct: Number(memPct.toFixed(2)),
       ports: c.Ports || [], created: c.Created, shortId: c.Id.slice(0, 12),
     }
@@ -443,7 +447,8 @@ async function runDockerMonitor() {
 async function readDockerEvents() {
   if (!existsSync(DOCKER_SOCKET)) return []
   return new Promise((resolve) => {
-    const req = httpRequest({ socketPath: DOCKER_SOCKET, path: `/v1.41/events?since=${Math.floor(Date.now() / 1000) - 60}`, method: 'GET' }, (res) => {
+    const now = Math.floor(Date.now() / 1000)
+    const req = httpRequest({ socketPath: DOCKER_SOCKET, path: `/v1.41/events?since=${now - 60}&until=${now}`, method: 'GET' }, (res) => {
       let data = ''; res.setEncoding('utf8'); res.on('data', (chunk) => { data += chunk })
       res.on('end', () => { try { resolve(data.trim().split('\n').filter(Boolean).map((line) => JSON.parse(line)).slice(-30)) } catch { resolve([]) } })
     })
@@ -451,30 +456,44 @@ async function readDockerEvents() {
   })
 }
 
-// Docker Hub version check
+// Compare Docker Hub's current tag digest with the exact local image digest.
+// If the engine does not expose a comparable RepoDigest, report unknown rather than guessing.
 const hubCache = new Map()
 async function checkDockerHubVersions(containers) {
   return Promise.all(containers.map(async (container) => {
     const image = container.image || ''
-    if (image.includes('@sha256:')) return { id: container.id, available: false, reason: 'Image uses a digest reference' }
+    if (image.includes('@sha256:')) return { id: container.id, available: false, updateAvailable: null, reason: 'Image uses a digest reference' }
     const slash = image.lastIndexOf('/'), colon = image.lastIndexOf(':')
     const tag = colon > slash ? image.slice(colon + 1) : 'latest'
     const repo = colon > slash ? image.slice(0, colon) : image
-    if (repo.includes('.') && !repo.startsWith('docker.io/')) return { id: container.id, available: false, reason: 'Non-Docker-Hub registry' }
-    const normalized = (repo.startsWith('docker.io/') ? repo.slice(9) : repo).includes('/') ? (repo.startsWith('docker.io/') ? repo.slice(9) : repo) : `library/${repo}`
+    if (repo.includes('.') && !repo.startsWith('docker.io/')) return { id: container.id, available: false, updateAvailable: null, reason: 'Non-Docker-Hub registry' }
+    const dockerHubRepo = repo.startsWith('docker.io/') ? repo.slice(9) : repo
+    const normalized = dockerHubRepo.includes('/') ? dockerHubRepo : `library/${dockerHubRepo}`
     const key = `${normalized}:${tag}`
-    let result = hubCache.get(key)
-    if (!result || result.expires < Date.now()) {
+    let remote = hubCache.get(key)
+    if (!remote || remote.expires < Date.now()) {
       try {
         const response = await fetch(`https://hub.docker.com/v2/repositories/${normalized}/tags/${encodeURIComponent(tag)}`, { signal: AbortSignal.timeout(5000) })
-        if (!response.ok) return { id: container.id, available: false, reason: `Docker Hub HTTP ${response.status}` }
+        if (!response.ok) return { id: container.id, available: false, updateAvailable: null, reason: `Docker Hub HTTP ${response.status}` }
         const data = await response.json()
         const digest = data.digest || data.images?.find((entry) => entry.os === 'linux')?.digest || null
-        result = { available: Boolean(digest), remoteDigest: digest, updateAvailable: null, reason: 'Docker API does not expose the running container image digest' }
-        hubCache.set(key, { ...result, expires: Date.now() + 300_000 })
-      } catch { return { id: container.id, available: false, reason: 'Docker Hub lookup failed' } }
-    } else result = { ...result, expires: undefined }
-    return { id: container.id, ...result }
+        remote = { remoteDigest: digest, expires: Date.now() + 300_000 }
+        hubCache.set(key, remote)
+      } catch { return { id: container.id, available: false, updateAvailable: null, reason: 'Docker Hub lookup failed' } }
+    }
+    if (!remote.remoteDigest) return { id: container.id, available: false, updateAvailable: null, reason: 'Docker Hub tag digest unavailable' }
+    const local = container.imageId ? await dockerRequest(`/images/${encodeURIComponent(container.imageId)}/json`) : null
+    const localDigests = Array.isArray(local?.RepoDigests) ? local.RepoDigests : []
+    const comparable = localDigests.length > 0
+    const updateAvailable = comparable ? !localDigests.some((digest) => digest.endsWith(`@${remote.remoteDigest}`)) : null
+    return {
+      id: container.id,
+      available: true,
+      remoteDigest: remote.remoteDigest,
+      localDigests,
+      updateAvailable,
+      reason: comparable ? (updateAvailable ? 'The running image digest differs from the current tag' : 'The running image matches the current tag') : 'The local engine did not provide a comparable repository digest',
+    }
   }))
 }
 
@@ -544,13 +563,13 @@ async function runSmartCheck() {
 // ─── Plex API ────────────────────────────────────────────────────────────────
 
 async function runPlexPoll() {
-  if (!PLEX_TOKEN) { state.plex = { sessions: [], artwork: [], activeStreams: 0, configured: false }; return }
+  if (!PLEX_TOKEN) { state.plex = { sessions: [], artwork: [], activeStreams: 0, configured: false }; broadcast({ type: 'plex', plex: state.plex }); return }
   try {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 8000)
-    const res = await fetch(`http://${PLEX_HOST}/status/sessions`, { headers: { 'Accept': 'application/json', 'X-Plex-Token': PLEX_TOKEN }, signal: controller.signal })
+    const res = await fetch(`http://${PLEX_HOST}/status/sessions`, { headers: { Accept: 'application/json', 'X-Plex-Token': PLEX_TOKEN }, signal: controller.signal })
     clearTimeout(timeout)
-    if (!res.ok) { state.plex = { sessions: [], artwork: [], activeStreams: 0, configured: true, error: `HTTP ${res.status}` }; return }
+    if (!res.ok) { state.plex = { sessions: [], artwork: [], activeStreams: 0, configured: true, error: `HTTP ${res.status}` }; broadcast({ type: 'plex', plex: state.plex }); return }
     const data = await res.json()
     const sessions = (data.MediaContainer?.Metadata || []).map((item) => ({
       key: item.key, title: item.title, type: item.type, grandparentTitle: item.grandparentTitle,
@@ -562,41 +581,53 @@ async function runPlexPoll() {
     }))
     state.plex = { sessions, artwork: sessions.map((s) => s.poster).filter(Boolean), activeStreams: sessions.length, configured: true }
     broadcast({ type: 'plex', plex: state.plex })
-  } catch (e) { state.plex = { sessions: [], artwork: [], activeStreams: 0, configured: true, error: e.message } }
+  } catch (e) { state.plex = { sessions: [], artwork: [], activeStreams: 0, configured: true, error: e.message }; broadcast({ type: 'plex', plex: state.plex }) }
 }
 
 // ─── Proxmox VE API ───────────────────────────────────────────────────────────
 
 async function runProxmoxPoll() {
-  if (!PVE_API_TOKEN) { state.proxmox = { nodes: [], vms: [], storage: [], configured: false }; return }
+  if (!PVE_API_TOKEN) { state.proxmox = { nodes: [], vms: [], storage: [], configured: false }; broadcast({ type: 'proxmox', proxmox: state.proxmox }); return }
   try {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 8000)
     const [identity, secret] = PVE_API_TOKEN.split('=')
     const [tokenUser, tokenName] = (identity || '').split('!')
+    if (!tokenUser || !tokenName || !secret) throw new Error('PVE_API_TOKEN must use user@realm!tokenid=secret format')
     const pveHeaders = { Authorization: `PVEAPIToken=${tokenUser}!${tokenName}=${secret || ''}`, Accept: 'application/json' }
     const pveRequest = (path) => new Promise((resolve, reject) => {
+      const timer = setTimeout(() => req.destroy(new Error('timeout')), 6000)
       const req = httpsRequest({ hostname: PVE_HOST.replace(/^https?:\/\//, '').split(':')[0], port: Number(PVE_HOST.match(/:(\d+)$/)?.[1] || 8006), path: `/api2/json${path}`, method: 'GET', headers: pveHeaders, rejectUnauthorized: false, timeout: 6000 }, (response) => {
-        let body = ''; response.setEncoding('utf8'); response.on('data', (chunk) => { body += chunk }); response.on('end', () => { try { resolve({ status: response.statusCode, data: JSON.parse(body) }) } catch { reject(new Error('Invalid Proxmox response')) } })
-      }); req.on('timeout', () => req.destroy(new Error('timeout'))); req.on('error', reject); req.end()
+        let body = ''; response.setEncoding('utf8'); response.on('data', (chunk) => { body += chunk }); response.on('end', () => { clearTimeout(timer); try { resolve({ status: response.statusCode, data: JSON.parse(body) }) } catch { reject(new Error('Invalid Proxmox response')) } })
+      }); req.on('timeout', () => req.destroy(new Error('timeout'))); req.on('error', (error) => { clearTimeout(timer); reject(error) }); req.end()
     })
-    clearTimeout(timeout)
     const response = await pveRequest('/nodes')
-    const res = { ok: response.status >= 200 && response.status < 300, status: response.status, json: async () => response.data }
-    clearTimeout(timeout)
-    if (!res.ok) { state.proxmox = { nodes: [], vms: [], storage: [], configured: true, error: `HTTP ${res.status}` }; return }
-    const data = await res.json()
-    const pveNodes = data.data || []
-    const vms = []
-    for (const node of pveNodes) {
+    if (response.status < 200 || response.status >= 300) { state.proxmox = { nodes: [], vms: [], storage: [], configured: true, error: `HTTP ${response.status}` }; broadcast({ type: 'proxmox', proxmox: state.proxmox }); return }
+    const listedNodes = response.data.data || []
+    const pveNodes = await Promise.all(listedNodes.map(async (node) => {
       try {
-        const vmRes = await pveRequest(`/nodes/${encodeURIComponent(node.node)}/qemu`)
-        if (vmRes.status >= 200 && vmRes.status < 300) for (const vm of vmRes.data.data || []) vms.push({ ...vm, node: node.node })
-      } catch {}
-    }
+        const status = await pveRequest(`/nodes/${encodeURIComponent(node.node)}/status`)
+        return status.status >= 200 && status.status < 300 ? { ...node, ...status.data.data } : node
+      } catch { return node }
+    }))
+    const inventory = await Promise.all(listedNodes.map(async (node) => {
+      const nodePath = `/nodes/${encodeURIComponent(node.node)}`
+      const [qemu, lxc] = await Promise.all([
+        pveRequest(`${nodePath}/qemu`).catch(() => null),
+        pveRequest(`${nodePath}/lxc`).catch(() => null),
+      ])
+      return [
+        ...(qemu?.status >= 200 && qemu.status < 300 ? (qemu.data.data || []).map((vm) => ({ ...vm, node: node.node, kind: 'qemu' })) : []),
+        ...(lxc?.status >= 200 && lxc.status < 300 ? (lxc.data.data || []).map((vm) => ({ ...vm, node: node.node, kind: 'lxc' })) : []),
+      ]
+    }))
+    const vms = await Promise.all(inventory.flat().map(async (vm) => {
+      try {
+        const status = await pveRequest(`/nodes/${encodeURIComponent(vm.node)}/${vm.kind}/${vm.vmid}/status/current`)
+        return status.status >= 200 && status.status < 300 ? { ...vm, ...status.data.data, node: vm.node, kind: vm.kind } : vm
+      } catch { return vm }
+    }))
     state.proxmox = { nodes: pveNodes, vms, storage: [], configured: true }
     broadcast({ type: 'proxmox', proxmox: state.proxmox })
-  } catch (e) { state.proxmox = { nodes: [], vms: [], storage: [], configured: true, error: e.message } }
+  } catch (e) { state.proxmox = { nodes: [], vms: [], storage: [], configured: true, error: e.message }; broadcast({ type: 'proxmox', proxmox: state.proxmox }) }
 }
 
 // ─── Network throughput ──────────────────────────────────────────────────────
@@ -749,7 +780,7 @@ async function handleApi(req, res, url) {
     if (!sameOrigin(req)) { sendJson(res, 403, { error: 'Cross-origin request denied' }); return }
     if (!authorized(req, res)) return
   }
-  if (path === '/api/config' && method === 'GET') { sendJson(res, 200, { controlEnabled: Boolean(DASHBOARD_TOKEN), weatherConfigured: Boolean(WEATHER_LAT && WEATHER_LON), plexConfigured: Boolean(PLEX_TOKEN), proxmoxConfigured: Boolean(PVE_API_TOKEN) }); return }
+  if (path === '/api/config' && method === 'GET') { sendJson(res, 200, { controlEnabled: Boolean(DASHBOARD_TOKEN && existsSync(DOCKER_SOCKET)), tokenRequired: Boolean(DASHBOARD_TOKEN), wolEnabled: Boolean(DASHBOARD_TOKEN), wolMacConfigured: Boolean(WOL_MAC), dockerAvailable: existsSync(DOCKER_SOCKET), weatherConfigured: Boolean(WEATHER_LAT && WEATHER_LON), plexConfigured: Boolean(PLEX_TOKEN), proxmoxConfigured: Boolean(PVE_API_TOKEN) }); return }
   if (path === '/api/device-names' && method === 'GET') { sendJson(res, 200, DEVICE_NAMES); return }
 
   if (path === '/api/docker' && method === 'GET') { sendJson(res, 200, { containers: state.docker.containers, available: existsSync(DOCKER_SOCKET) }); return }
@@ -777,8 +808,9 @@ async function handleApi(req, res, url) {
   }
 
   if (path === '/api/wol' && method === 'POST') {
-    let body = ''
-    req.on('data', (d) => { body += d }); req.on('end', async () => {
+    let body = '', tooLarge = false
+    req.on('data', (d) => { if (Buffer.byteLength(body) + d.length > 4096) { tooLarge = true; sendJson(res, 413, { ok: false, error: 'Request body exceeds 4 KB' }); req.destroy(); return } body += d }); req.on('end', async () => {
+      if (tooLarge) return
       let parsed
       try { parsed = JSON.parse(body || '{}') } catch { sendJson(res, 400, { ok: false, error: 'Invalid JSON' }); return }
       const { mac, broadcast } = parsed

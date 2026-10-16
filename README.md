@@ -5,12 +5,14 @@ A self-hosted network observatory. LAN discovery runs locally on the Docker host
 ## Run
 
 ```sh
-# Set secure secrets in an untracked .env file before enabling controls
+# Create a private .env file before enabling Docker controls or integrations
+umask 077
 printf 'DASHBOARD_TOKEN=%s\n' "$(openssl rand -hex 32)" > .env
+# Add optional PVE_API_TOKEN, PLEX_TOKEN, WOL_MAC, WEATHER_LAT and WEATHER_LON here.
 docker compose up -d
 ```
 
-Open `http://<host-ip>:8086`. Compose uses host networking and exposes the web service on port 8086. Deployment has not been validated in this environment.
+Open `http://<host-ip>:8086`. Compose uses host networking and exposes the web service on port 8086. Values in `.env` are explicitly mapped into the container by Compose. Deployment has not been validated in this environment.
 
 ## Runtime
 
@@ -20,19 +22,22 @@ The dependency-free Node ESM monitor uses native Node networking and the Docker 
 |---|---|---|
 | `SCAN_INTERVAL_MS` / `DISCOVERY_INTERVAL_MS` | 10000 | Inventory and discovery cadence (ms) |
 | `PORT_INTERVAL_MS` | 10000 | Service checks/matrix cadence |
-| `PVE_HOST` | `192.168.4.200` | Proxmox API host |
+| `PVE_HOST` | `192.168.4.200` | Proxmox API host (HTTPS on port 8006 by default) |
 | `PVE_API_TOKEN` | empty | Proxmox token string `user@realm!tokenid=secret` |
-| `PLEX_TOKEN` | empty | Plex API credential |
-| `DASHBOARD_TOKEN` | empty | Required Bearer token for Docker control APIs |
-| `WOL_MAC` | empty | Default Wake-on-LAN target |
+| `PLEX_HOST` | `192.168.4.49:32400` | Plex host and port |
+| `PLEX_TOKEN` | empty | Plex API credential; artwork is proxied locally |
+| `DASHBOARD_TOKEN` | empty | Required Bearer token for Docker and Wake-on-LAN controls |
+| `WOL_MAC` | empty | Default Wake-on-LAN target MAC |
+| `WOL_BROADCAST` | `192.168.4.255` | Wake-on-LAN broadcast address |
 | `WEATHER_LAT`, `WEATHER_LON` | unset | Both required to enable Open-Meteo |
-| `GITHUB_REPO` | `Hemiboy98/neonspace-network-dashboard` | Optional public repository event polling |
-| `SSL_TARGETS`, `DNS_TARGETS` | built-in local/domain targets | Certificate and resolver checks |
+| `GITHUB_REPO` | `Hemiboy98/neonspace-network-dashboard` | Public repository event polling |
+| `SSL_TARGETS` | `192.168.4.47:8006,192.168.4.200:8006` | Comma-separated HTTPS certificate targets (`host:port`) |
+| `DNS_TARGETS` | `google.com,cloudflare.com,github.com,plex.tv` | Comma-separated DNS benchmark targets |
 | `DOCKER_SOCKET` | `/var/run/docker.sock` | Docker API socket path |
 
 For production, set `DASHBOARD_TOKEN` to a long random secret and send it as `Authorization: Bearer <token>` for Docker mutation requests. Without it, control endpoints return an explicit unavailable response. Mutation APIs require same-origin requests and enforce body-size limits. Keep this dashboard on a trusted network; possession of the Docker socket is effectively host-level authority. The compose socket mount is read-only as a filesystem mount, but **this does not make Docker API operations read-only**: clients can still issue API actions through the socket. Do not expose the dashboard publicly. Do not place any API token in frontend/browser configuration.
 
-Plex artwork URLs are served through the local `/api/plex/artwork` proxy so the Plex token stays server-side. Proxmox's self-signed TLS allowance is scoped to the configured local PVE host; external requests retain normal TLS validation. SMART data is best-effort and depends on host device access/tool capabilities. Weather remains absent unless both coordinates are explicitly configured.
+Plex artwork URLs are served through the local `/api/plex/artwork` proxy so the Plex token stays server-side. The default certificate sweep checks the Proxmox HTTPS ports only; add real HTTPS services to `SSL_TARGETS` rather than plaintext HTTP ports. Proxmox's self-signed TLS allowance is scoped to the configured PVE host. SMART data is best-effort and depends on host device access/tool capabilities. Weather remains absent unless both coordinates are explicitly configured.
 
 ## Files
 
