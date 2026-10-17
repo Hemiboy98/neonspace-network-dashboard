@@ -28,7 +28,7 @@
 
 import { spawn, execFileSync } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
-import { readFileSync, existsSync, readlinkSync, readdirSync, statSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync, readlinkSync, readdirSync, statSync } from 'node:fs'
 import { createServer, request as httpRequest } from 'node:http'
 import { request as httpsRequest } from 'node:https'
 import { Socket } from 'node:net'
@@ -74,7 +74,7 @@ const TAILSCALE_INTERFACE = process.env.TAILSCALE_INTERFACE?.trim() || 'tailscal
 const TAILSCALE_PROBE_PORT = Number(process.env.TAILSCALE_PROBE_PORT || 8006)
 const TAILSCALE_LAST_SEEN_GRACE_MS = Number(process.env.TAILSCALE_LAST_SEEN_GRACE_MS || 120_000)
 const DASHBOARD_TOKEN = process.env.DASHBOARD_TOKEN || ''
-const DEVICE_NAMES_PATH = process.env.DEVICE_NAMES_PATH || '/app/public/device-names.json'
+const DEVICE_NAMES_PATH = process.env.DEVICE_NAMES_PATH || '/app/neonspace-network-dashboard/device-names.json'
 let DEVICE_NAMES
 try {
   DEVICE_NAMES = readDeviceNameMatrix(DEVICE_NAMES_PATH)
@@ -85,7 +85,7 @@ try {
 
 // ─── Anchor definitions ───────────────────────────────────────────────────────
 
-const anchors = Object.entries(DEVICE_NAMES).map(([ip, name]) => ({ id: `host-${ip.replaceAll('.', '-')}`, name, ip, kind: ip.startsWith('100.') ? 'Tailscale tunnel' : 'Inventory device', role: 'anchor' }))
+let anchors = Object.entries(DEVICE_NAMES).map(([ip, name]) => ({ id: `host-${ip.replaceAll('.', '-')}`, name, ip, kind: ip.startsWith('100.') ? 'Tailscale tunnel' : 'Inventory device', role: 'anchor' }))
 
 const portChecks = [
   { ip: '192.168.4.47', label: 'Proxmox VE UI', port: 8006 },
@@ -95,11 +95,39 @@ const portChecks = [
 ]
 
 const portMatrixIps = ['192.168.4.200', '192.168.4.33', '192.168.4.48', '192.168.4.49', '192.168.4.47']
-const portMatrixTargets = portMatrixIps.map((ip) => ({ ip, label: anchors.find((node) => node.ip === ip)?.name || ip }))
+let portMatrixTargets = portMatrixIps.map((ip) => ({ ip, label: anchors.find((node) => node.ip === ip)?.name || ip }))
 const portMatrixPorts = [22, 80, 443, 7575, 8006, 32400]
 
-const knownIps = new Set(anchors.map((n) => n.ip))
+let knownIps = new Set(anchors.map((n) => n.ip))
 const nodes = new Map(anchors.map((n) => [n.ip, { ...n, role: 'anchor', status: 'unknown', latencyMs: null, macAddress: null, vendor: null, lastChecked: null, lastSeen: null, portState: {}, evidence: 'Waiting for first probe' }]))
+function labeledDeviceNodes() {
+  return [...nodes.values()].flatMap((node) => {
+    const name = DEVICE_NAMES[node.ip]
+    return name ? [{ ...node, name }] : []
+  })
+}
+function replaceDeviceNameMatrix(matrix) {
+  DEVICE_NAMES = matrix
+  anchors = Object.entries(matrix).map(([ip, name]) => ({ id: `host-${ip.replaceAll('.', '-')}`, name, ip, kind: ip.startsWith('100.') ? 'Tailscale tunnel' : 'Inventory device', role: 'anchor' }))
+  knownIps = new Set(anchors.map((node) => node.ip))
+  portMatrixTargets = portMatrixIps.map((ip) => ({ ip, label: matrix[ip] }))
+  for (const [ip] of nodes) if (!Object.hasOwn(matrix, ip)) nodes.delete(ip)
+  for (const anchor of anchors) {
+    const previous = nodes.get(anchor.ip)
+    nodes.set(anchor.ip, previous
+      ? { ...previous, ...anchor, role: 'anchor' }
+      : { ...anchor, status: 'unknown', latencyMs: null, macAddress: null, vendor: null, lastChecked: null, lastSeen: null, portState: {}, evidence: 'Waiting for first probe' })
+  }
+}
+function reloadDeviceNameMatrix() {
+  try {
+    replaceDeviceNameMatrix(readDeviceNameMatrix(DEVICE_NAMES_PATH))
+    return true
+  } catch (error) {
+    console.error(`[monitor] device dictionary reload failed: ${error.message}`)
+    return false
+  }
+}
 const reverseCache = new Map()
 async function reverseHostname(ip) {
   const cached = reverseCache.get(ip)
@@ -116,6 +144,7 @@ const logs = []
 const state = {
   portMatrix: {},       // ip -> { port: { open, latencyMs } }
   wan: { lossPct: null, rttMs: null, drops: 0, samples: [], history: [] },
+  gateway: { connected: null, checkedAt: null, error: null },
   ssl: [],              // [{ host, port, daysLeft, issuer, valid }]
   dns: [],              // [{ domain, latencyMs, resolved }]
   docker: { containers: [], events: [], stats: {} },
@@ -328,9 +357,9 @@ async function probe(node, mode) {
   const vendor = vendorForMac(macAddress) || previous?.vendor || null
   const status = makeStatus(result.reachable, result.latencyMs, result.error, macAddress)
   const at = new Date().toISOString()
-  const record = { ...(previous || node), ...node, hostname: hostname || previous?.hostname || null, role: node.role || 'anchor', status, latencyMs: result.reachable ? result.latencyMs : null, macAddress, vendor, lastChecked: at, lastSeen: result.reachable || macAddress ? at : previous?.lastSeen || null, evidence: result.error ? `Probe error: ${result.error}` : result.reachable ? 'ICMP echo reply' : macAddress ? 'ARP neighbor present; ICMP did not reply' : 'No ICMP or ARP response' }
+  const record = { ...(previous || node), ...node, name: DEVICE_NAMES[node.ip], hostname: hostname || previous?.hostname || null, role: node.role || 'anchor', status, latencyMs: result.reachable ? result.latencyMs : null, macAddress, vendor, lastChecked: at, lastSeen: result.reachable || macAddress ? at : previous?.lastSeen || null, evidence: result.error ? `Probe error: ${result.error}` : result.reachable ? 'ICMP echo reply' : macAddress ? 'ARP neighbor present; ICMP did not reply' : 'No ICMP or ARP response' }
   nodes.set(node.ip, record)
-  broadcast({ type: 'node', node: record })
+  broadcast({ type: 'node', node: { ...record, name: DEVICE_NAMES[node.ip] } })
   const changed = !previous || previous.status !== status
   if (mode === 'anchor' || changed || result.reachable) {
     const msg = result.error ? `Probe unavailable: ${result.error}` : result.reachable ? `ICMP response in ${result.latencyMs === null ? 'under 1 ms' : `${result.latencyMs.toFixed(1)} ms`}` : macAddress ? 'ARP neighbor responded; ICMP timed out' : 'No ICMP response'
@@ -398,6 +427,7 @@ async function probeTailscale(node) {
   const at = new Date().toISOString()
   const record = {
     ...(previous || node), ...node,
+    name: DEVICE_NAMES[node.ip],
     status,
     latencyMs,
     lastChecked: at,
@@ -406,7 +436,7 @@ async function probeTailscale(node) {
     tailscale: { daemonAvailable: Boolean(daemonStatus), backendState: daemonStatus?.BackendState || null, interfaceUp: tunnel.up, interfaceAddress: tunnel.address },
   }
   nodes.set(node.ip, record)
-  broadcast({ type: 'node', node: record })
+  broadcast({ type: 'node', node: { ...record, name: DEVICE_NAMES[node.ip] } })
   if (!previous || previous.status !== status || reachable) {
     addLog({ name: record.name, ip: record.ip, severity: status === 'online' ? 'ok' : status === 'unknown' || status === 'offline' ? 'warn' : 'info', message: evidence })
   }
@@ -416,6 +446,7 @@ async function probeTailscale(node) {
 let anchorRunning = false
 async function runAnchorCycle() {
   if (anchorRunning) return
+  if (!reloadDeviceNameMatrix()) return
   anchorRunning = true
   try { await Promise.all(anchors.map((n) => probe(n, 'anchor'))); broadcast(snapshot()) } finally { anchorRunning = false }
 }
@@ -427,6 +458,7 @@ let lastDiscoveryAt = 0
 let lastDiscoveryCompletedAt = null
 
 async function runDiscoverySweep(manual = false) {
+  if (!reloadDeviceNameMatrix()) { broadcast({ type: 'scan', state: 'error', message: 'Device-name dictionary could not be reloaded.' }); return }
   if (discoveryRunning) { broadcast({ type: 'scan', state: 'busy', message: 'Subnet discovery is already running.' }); return }
   if (manual && Date.now() - lastDiscoveryAt < 10_000) { broadcast({ type: 'scan', state: 'cooldown', message: 'Please wait before starting another subnet sweep.' }); return }
   discoveryRunning = true; lastDiscoveryAt = Date.now()
@@ -441,9 +473,10 @@ async function runDiscoverySweep(manual = false) {
         if (result.error) { if (previous) nodes.set(ip, { ...previous, status: 'unknown', latencyMs: null, lastChecked: new Date().toISOString(), evidence: `Probe error: ${result.error}` }) }
         else if (result.reachable || macAddress || previous) {
           const hostname = await reverseHostname(ip)
-          const name = DEVICE_NAMES[ip] || hostname || previous?.name || `Discovered terminal · ${ip}`
-          const record = { id: previous?.id || `host-${ip.replaceAll('.', '-')}`, name, hostname, ip, role: 'discovered', status: makeStatus(result.reachable, result.latencyMs, null, macAddress), latencyMs: result.reachable ? result.latencyMs : null, macAddress, vendor, lastChecked: new Date().toISOString(), lastSeen: result.reachable || macAddress ? new Date().toISOString() : previous?.lastSeen || null, evidence: result.reachable ? 'ICMP echo reply' : macAddress ? 'ARP neighbor present; ICMP did not reply' : 'No ICMP or ARP response' }
-          nodes.set(ip, record); broadcast({ type: 'node', node: record })
+          const name = DEVICE_NAMES[ip]
+          if (!name) { completed += 1; continue }
+          const record = { id: previous?.id || `host-${ip.replaceAll('.', '-')}`, name: DEVICE_NAMES[ip], hostname, ip, role: 'discovered', status: makeStatus(result.reachable, result.latencyMs, null, macAddress), latencyMs: result.reachable ? result.latencyMs : null, macAddress, vendor, lastChecked: new Date().toISOString(), lastSeen: result.reachable || macAddress ? new Date().toISOString() : previous?.lastSeen || null, evidence: result.reachable ? 'ICMP echo reply' : macAddress ? 'ARP neighbor present; ICMP did not reply' : 'No ICMP or ARP response' }
+          nodes.set(ip, record); broadcast({ type: 'node', node: { ...record, name: DEVICE_NAMES[ip] } })
           if (result.reachable || (previous && previous.status !== record.status)) addLog({ name, ip, severity: result.reachable ? record.status === 'degraded' ? 'warn' : 'ok' : 'warn', message: result.reachable ? `ICMP response in ${result.latencyMs === null ? 'under 1 ms' : `${result.latencyMs.toFixed(1)} ms`}` : record.evidence })
         }
         completed += 1
@@ -506,8 +539,18 @@ async function runWanDiagnostics() {
   state.wan.rttMs = sample.rttMs
   const packetsDropped = Math.round((5 * result.lossPct) / 100)
   state.wan.drops += packetsDropped
-  broadcast({ type: 'wan', wan: { ...sample, totalDrops: state.wan.drops, history: state.wan.history.slice(-30) } })
+  broadcast({ type: 'WAN_STATUS', wan: { ...sample, connected: state.gateway.connected, totalDrops: state.wan.drops, history: state.wan.history.slice(-30) }, connected: state.gateway.connected, deviceNames: DEVICE_NAMES, nodes: labeledDeviceNodes() })
   if (packetsDropped > 0) addLog({ name: 'WAN Diagnostics', ip: '8.8.8.8', severity: 'warn', message: `Five-packet burst lost ${packetsDropped}/5 packets (${result.lossPct}% loss)` })
+}
+
+async function checkOutboundConnectivity() {
+  const result = await ping('8.8.8.8')
+  const wasConnected = state.gateway.connected
+  const checkedAt = new Date().toISOString()
+  state.gateway = { connected: result.reachable, checkedAt, error: result.reachable ? null : result.error || 'Host unreachable or ping timed out' }
+  broadcast({ type: 'WAN_STATUS', connected: result.reachable, checkedAt, error: state.gateway.error, deviceNames: DEVICE_NAMES, nodes: labeledDeviceNodes() })
+  if (!result.reachable) broadcast({ type: 'GATEWAY_DISCONNECTED', checkedAt, error: state.gateway.error })
+  else if (wasConnected === false) broadcast({ type: 'GATEWAY_RESTORED', checkedAt })
 }
 
 // ─── SSL certificate check ────────────────────────────────────────────────────
@@ -887,9 +930,11 @@ function snapshot() {
   return {
     type: 'snapshot', at: new Date().toISOString(),
     intervalMs: SCAN_INTERVAL, discoveryIntervalMs: DISCOVERY_INTERVAL, lastDiscoveryCompletedAt,
-    nodes: current,
+    nodes: labeledDeviceNodes(),
+    deviceNames: DEVICE_NAMES,
     metrics: { total: current.length, online: current.filter((n) => n.status === 'online' || n.status === 'degraded').length, degraded: current.filter((n) => n.status === 'degraded').length, offline: current.filter((n) => n.status === 'offline').length, unknown: current.filter((n) => n.status === 'unknown').length, medianLatencyMs },
-    wan: { lossPct: state.wan.lossPct, rttMs: state.wan.rttMs, drops: state.wan.drops },
+    wan: { lossPct: state.wan.lossPct, rttMs: state.wan.rttMs, drops: state.wan.drops, connected: state.gateway.connected },
+    gateway: state.gateway,
     docker: { available: existsSync(DOCKER_SOCKET), containerCount: state.docker.containers.length },
     plex: { configured: !!PLEX_TOKEN, activeStreams: state.plex.activeStreams },
     proxmox: { configured: !!PVE_API_TOKEN },
@@ -903,7 +948,7 @@ function snapshot() {
 function broadcastFullState(socket) {
   send(socket, snapshot())
   send(socket, { type: 'port-matrix', matrix: state.portMatrix })
-  send(socket, { type: 'wan', wan: { lossPct: state.wan.lossPct, rttMs: state.wan.rttMs, drops: state.wan.drops, history: state.wan.history.slice(-30) } })
+  send(socket, { type: 'WAN_STATUS', connected: state.gateway.connected, checkedAt: state.gateway.checkedAt, error: state.gateway.error, wan: { lossPct: state.wan.lossPct, rttMs: state.wan.rttMs, drops: state.wan.drops, connected: state.gateway.connected, history: state.wan.history.slice(-30) }, deviceNames: DEVICE_NAMES, nodes: labeledDeviceNodes() })
   send(socket, { type: 'ssl', ssl: state.ssl })
   send(socket, { type: 'dns', dns: state.dns })
   send(socket, { type: 'docker', docker: { containers: state.docker.containers, events: state.docker.events, freshness: state.docker.freshness, available: existsSync(DOCKER_SOCKET) } })
@@ -920,12 +965,35 @@ function broadcastFullState(socket) {
 function sendJson(res, status, data) { res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' }); res.end(JSON.stringify(data)) }
 function sameOrigin(req) { const origin = req.headers.origin; if (!origin) return true; try { return new URL(origin).host === req.headers.host } catch { return false } }
 function validMac(mac) { return typeof mac === 'string' && /^(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}$/i.test(mac) }
+function validDeviceIp(ip) {
+  if (typeof ip !== 'string' || !/^(?:\d{1,3}\.){3}\d{1,3}$/.test(ip)) return false
+  const octets = ip.split('.').map(Number)
+  return octets.every((octet) => octet >= 0 && octet <= 255) &&
+    ((octets[0] === 192 && octets[1] === 168 && octets[2] === 4 && octets[3] > 0 && octets[3] < 255) ||
+      (octets[0] === 100 && octets[1] >= 64 && octets[1] <= 127))
+}
+function readJsonBody(req, limit = 4096) {
+  return new Promise((resolve) => {
+    let body = Buffer.alloc(0), tooLarge = false
+    req.on('data', (chunk) => {
+      if (tooLarge) return
+      if (body.length + chunk.length > limit) { tooLarge = true; body = Buffer.alloc(0); return }
+      body = Buffer.concat([body, chunk])
+    })
+    req.on('end', () => {
+      if (tooLarge) { resolve({ error: 'Request body exceeds 4 KB', status: 413 }); return }
+      try { resolve({ value: JSON.parse(body.toString('utf8') || '{}') }) }
+      catch { resolve({ error: 'Invalid JSON', status: 400 }) }
+    })
+    req.on('error', () => resolve({ error: 'Request body could not be read', status: 400 }))
+  })
+}
 function validBroadcast(host) {
   if (typeof host !== 'string' || !/^(?:\d{1,3}\.){3}\d{1,3}$/.test(host)) return false
   return host.split('.').every((part) => Number(part) >= 0 && Number(part) <= 255)
 }
 function authorized(req, res) {
-  if (!DASHBOARD_TOKEN) { sendJson(res, 503, { error: 'Docker control unavailable: DASHBOARD_TOKEN is not configured' }); return false }
+  if (!DASHBOARD_TOKEN) { sendJson(res, 503, { error: 'Protected changes are unavailable: DASHBOARD_TOKEN is not configured on the Docker host.' }); return false }
   if (!sameOrigin(req)) { sendJson(res, 403, { error: 'Cross-origin request denied' }); return false }
   if (req.headers.authorization !== `Bearer ${DASHBOARD_TOKEN}`) { sendJson(res, 401, { error: 'Bearer token required' }); return false }
   return true
@@ -942,7 +1010,35 @@ async function handleApi(req, res, url) {
     if (!authorized(req, res)) return
   }
   if (path === '/api/config' && method === 'GET') { sendJson(res, 200, { controlEnabled: Boolean(DASHBOARD_TOKEN && existsSync(DOCKER_SOCKET)), tokenRequired: Boolean(DASHBOARD_TOKEN), wolEnabled: Boolean(DASHBOARD_TOKEN), wolMacConfigured: Boolean(WOL_MAC), dockerAvailable: existsSync(DOCKER_SOCKET), weatherConfigured: Boolean(WEATHER_LAT && WEATHER_LON), plexConfigured: Boolean(PLEX_TOKEN), proxmoxConfigured: Boolean(PVE_API_TOKEN) }); return }
-  if (path === '/api/device-names' && method === 'GET') { sendJson(res, 200, DEVICE_NAMES); return }
+  if (path === '/api/device-names' && method === 'GET') {
+    if (!reloadDeviceNameMatrix()) { sendJson(res, 500, { error: 'Device-name dictionary could not be read.' }); return }
+    sendJson(res, 200, DEVICE_NAMES); return
+  }
+
+  if (path === '/api/update-device-name' && method === 'POST') {
+    if (!String(req.headers['content-type'] || '').toLowerCase().startsWith('application/json')) { sendJson(res, 415, { error: 'Content-Type must be application/json' }); return }
+    const parsed = await readJsonBody(req)
+    if (parsed.error) { sendJson(res, parsed.status, { error: parsed.error }); return }
+    const ip = parsed.value?.ip
+    const name = typeof parsed.value?.name === 'string' ? parsed.value.name.trim() : ''
+    if (!validDeviceIp(ip)) { sendJson(res, 400, { error: 'Enter a valid private-network device IP address.' }); return }
+    if (!name || name.length > 80 || /[\u0000-\u001f\u007f]/.test(name)) { sendJson(res, 400, { error: 'Device names must be 1–80 characters without control characters.' }); return }
+    try {
+      const matrix = readDeviceNameMatrix(DEVICE_NAMES_PATH)
+      const nextMatrix = { ...matrix, [ip]: name }
+      writeFileSync(DEVICE_NAMES_PATH, `${JSON.stringify(nextMatrix, null, 2)}\n`, 'utf8')
+      replaceDeviceNameMatrix(nextMatrix)
+      const node = nodes.get(ip)
+      if (node) { node.name = name; nodes.set(ip, node) }
+      broadcast({ type: 'TOPOLOGY_UPDATE', at: new Date().toISOString(), ip, name: DEVICE_NAMES[ip], deviceNames: DEVICE_NAMES, nodes: labeledDeviceNodes() })
+      addLog({ name, ip, severity: 'ok', message: 'Device label updated in the local inventory' })
+      sendJson(res, 200, { ok: true, ip, name, deviceNames: DEVICE_NAMES })
+    } catch (error) {
+      console.error(`[monitor] device-name update failed: ${error.message}`)
+      sendJson(res, 500, { error: 'Could not update the device-name dictionary.' })
+    }
+    return
+  }
 
   if (path === '/api/docker' && method === 'GET') { sendJson(res, 200, { containers: state.docker.containers, available: existsSync(DOCKER_SOCKET) }); return }
 
@@ -1046,6 +1142,7 @@ const timers = [
   setInterval(() => void runDiscoverySweep(), DISCOVERY_INTERVAL),
   setInterval(() => void runPortChecks(), PORT_INTERVAL),
   setInterval(() => void runWanDiagnostics(), WAN_INTERVAL),
+  setInterval(() => void checkOutboundConnectivity(), 30_000),
   setInterval(() => void runSslChecks(), SSL_INTERVAL),
   setInterval(() => void runDnsBenchmark(), DNS_INTERVAL),
   setInterval(() => void runDockerMonitor(), DOCKER_INTERVAL),
@@ -1065,6 +1162,7 @@ addLog({ severity: 'info', message: `NeonSpace monitor starting · ${anchors.len
 void runAnchorCycle().then(() => runDiscoverySweep()).catch((e) => addLog({ severity: 'warn', message: `Initial scan failed: ${e.message}` }))
 void runPortChecks().catch(() => {})
 void runWanDiagnostics().catch(() => {})
+void checkOutboundConnectivity().catch(() => {})
 void runSslChecks().catch(() => {})
 void runDnsBenchmark().catch(() => {})
 void runDockerMonitor().catch(() => {})
