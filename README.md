@@ -27,7 +27,7 @@ The dependency-free Node ESM monitor uses native Node networking and the Docker 
 | `PLEX_HOST` | `192.168.4.49:32400` | Plex host and port; overrides the private JSON file |
 | `PLEX_TOKEN` | empty | Plex API credential; artwork is proxied locally; overrides the private JSON file |
 | `NEONSPACE_PRIVATE_CONFIG_DIR` | `../neonspace-private-config` | Host directory mounted read-only for integration JSON settings |
-| `DASHBOARD_TOKEN` | empty | Required Bearer token for Docker and Wake-on-LAN controls |
+| `DASHBOARD_TOKEN` | empty | Required Bearer token for Docker/Wake-on-LAN controls and device-name edits |
 | `WOL_MAC` | empty | Default Wake-on-LAN target MAC |
 | `WOL_BROADCAST` | `192.168.4.255` | Wake-on-LAN broadcast address |
 | `WEATHER_LAT`, `WEATHER_LON` | unset | Both required to enable Open-Meteo |

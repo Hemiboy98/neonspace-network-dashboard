@@ -12,6 +12,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /dev:/dev:ro
+      # Persist dashboard name edits in the repository's canonical device matrix.
+      - ./public/device-names.json:/app/neonspace-network-dashboard/device-names.json
       # JSON integration credentials live outside the repository and are never served by nginx.
       - ${NEONSPACE_PRIVATE_CONFIG_DIR:-../neonspace-private-config}:/run/neonspace-config:ro
     environment:

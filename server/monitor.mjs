@@ -74,7 +74,7 @@ const TAILSCALE_INTERFACE = process.env.TAILSCALE_INTERFACE?.trim() || 'tailscal
 const TAILSCALE_PROBE_PORT = Number(process.env.TAILSCALE_PROBE_PORT || 8006)
 const TAILSCALE_LAST_SEEN_GRACE_MS = Number(process.env.TAILSCALE_LAST_SEEN_GRACE_MS || 120_000)
 const DASHBOARD_TOKEN = process.env.DASHBOARD_TOKEN || ''
-const DEVICE_NAMES_PATH = process.env.DEVICE_NAMES_PATH || '/app/neonspace-network-dashboard/device-names.json'
+const DEVICE_NAMES_PATH = '/app/neonspace-network-dashboard/device-names.json'
 let DEVICE_NAMES
 try {
   DEVICE_NAMES = readDeviceNameMatrix(DEVICE_NAMES_PATH)
@@ -95,7 +95,7 @@ const portChecks = [
 ]
 
 const portMatrixIps = ['192.168.4.200', '192.168.4.33', '192.168.4.48', '192.168.4.49', '192.168.4.47']
-let portMatrixTargets = portMatrixIps.map((ip) => ({ ip, label: anchors.find((node) => node.ip === ip)?.name || ip }))
+let portMatrixTargets = portMatrixIps.map((ip) => ({ ip, label: DEVICE_NAMES[ip] }))
 const portMatrixPorts = [22, 80, 443, 7575, 8006, 32400]
 
 let knownIps = new Set(anchors.map((n) => n.ip))
@@ -105,6 +105,11 @@ function labeledDeviceNodes() {
     const name = DEVICE_NAMES[node.ip]
     return name ? [{ ...node, name }] : []
   })
+}
+function broadcastDeviceNode(node) {
+  const name = DEVICE_NAMES[node.ip]
+  if (typeof name !== 'string' || !name) return
+  broadcast({ type: 'node', node: { ...node, name } })
 }
 function replaceDeviceNameMatrix(matrix) {
   DEVICE_NAMES = matrix
@@ -353,13 +358,15 @@ async function probe(node, mode) {
   const result = await ping(node.ip)
   const hostname = result.reachable ? await reverseHostname(node.ip) : null
   const previous = nodes.get(node.ip)
+  const name = DEVICE_NAMES[node.ip]
+  if (!name) return null
   const macAddress = arpTable().get(node.ip) || null
   const vendor = vendorForMac(macAddress) || previous?.vendor || null
   const status = makeStatus(result.reachable, result.latencyMs, result.error, macAddress)
   const at = new Date().toISOString()
-  const record = { ...(previous || node), ...node, name: DEVICE_NAMES[node.ip], hostname: hostname || previous?.hostname || null, role: node.role || 'anchor', status, latencyMs: result.reachable ? result.latencyMs : null, macAddress, vendor, lastChecked: at, lastSeen: result.reachable || macAddress ? at : previous?.lastSeen || null, evidence: result.error ? `Probe error: ${result.error}` : result.reachable ? 'ICMP echo reply' : macAddress ? 'ARP neighbor present; ICMP did not reply' : 'No ICMP or ARP response' }
+  const record = { ...(previous || node), ...node, name, hostname: hostname || previous?.hostname || null, role: node.role || 'anchor', status, latencyMs: result.reachable ? result.latencyMs : null, macAddress, vendor, lastChecked: at, lastSeen: result.reachable || macAddress ? at : previous?.lastSeen || null, evidence: result.error ? `Probe error: ${result.error}` : result.reachable ? 'ICMP echo reply' : macAddress ? 'ARP neighbor present; ICMP did not reply' : 'No ICMP or ARP response' }
   nodes.set(node.ip, record)
-  broadcast({ type: 'node', node: { ...record, name: DEVICE_NAMES[node.ip] } })
+  broadcastDeviceNode(record)
   const changed = !previous || previous.status !== status
   if (mode === 'anchor' || changed || result.reachable) {
     const msg = result.error ? `Probe unavailable: ${result.error}` : result.reachable ? `ICMP response in ${result.latencyMs === null ? 'under 1 ms' : `${result.latencyMs.toFixed(1)} ms`}` : macAddress ? 'ARP neighbor responded; ICMP timed out' : 'No ICMP response'
@@ -424,10 +431,12 @@ async function probeTailscale(node) {
     }
   }
 
+  const name = DEVICE_NAMES[node.ip]
+  if (!name) return null
   const at = new Date().toISOString()
   const record = {
     ...(previous || node), ...node,
-    name: DEVICE_NAMES[node.ip],
+    name,
     status,
     latencyMs,
     lastChecked: at,
@@ -436,7 +445,7 @@ async function probeTailscale(node) {
     tailscale: { daemonAvailable: Boolean(daemonStatus), backendState: daemonStatus?.BackendState || null, interfaceUp: tunnel.up, interfaceAddress: tunnel.address },
   }
   nodes.set(node.ip, record)
-  broadcast({ type: 'node', node: { ...record, name: DEVICE_NAMES[node.ip] } })
+  broadcastDeviceNode(record)
   if (!previous || previous.status !== status || reachable) {
     addLog({ name: record.name, ip: record.ip, severity: status === 'online' ? 'ok' : status === 'unknown' || status === 'offline' ? 'warn' : 'info', message: evidence })
   }
@@ -476,7 +485,7 @@ async function runDiscoverySweep(manual = false) {
           const name = DEVICE_NAMES[ip]
           if (!name) { completed += 1; continue }
           const record = { id: previous?.id || `host-${ip.replaceAll('.', '-')}`, name: DEVICE_NAMES[ip], hostname, ip, role: 'discovered', status: makeStatus(result.reachable, result.latencyMs, null, macAddress), latencyMs: result.reachable ? result.latencyMs : null, macAddress, vendor, lastChecked: new Date().toISOString(), lastSeen: result.reachable || macAddress ? new Date().toISOString() : previous?.lastSeen || null, evidence: result.reachable ? 'ICMP echo reply' : macAddress ? 'ARP neighbor present; ICMP did not reply' : 'No ICMP or ARP response' }
-          nodes.set(ip, record); broadcast({ type: 'node', node: { ...record, name: DEVICE_NAMES[ip] } })
+          nodes.set(ip, record); broadcastDeviceNode(record)
           if (result.reachable || (previous && previous.status !== record.status)) addLog({ name, ip, severity: result.reachable ? record.status === 'degraded' ? 'warn' : 'ok' : 'warn', message: result.reachable ? `ICMP response in ${result.latencyMs === null ? 'under 1 ms' : `${result.latencyMs.toFixed(1)} ms`}` : record.evidence })
         }
         completed += 1
@@ -509,7 +518,7 @@ async function runPortChecks() {
       node.serviceHealthy = checkedServices.length ? checkedServices.every(Boolean) : null
       node.serviceStatus = node.serviceHealthy === null ? 'unknown' : node.serviceHealthy ? 'online' : 'offline'
       nodes.set(pc.ip, node)
-      broadcast({ type: 'node', node })
+      broadcastDeviceNode(node)
     }
     broadcast({ type: 'port-check', portCheck: record })
     if (!result.open) addLog({ name: pc.label, ip: pc.ip, severity: 'warn', message: `Port ${pc.port} not responding` })
