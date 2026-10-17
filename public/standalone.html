@@ -490,6 +490,7 @@
         if(!ctx){document.querySelector('#webgl-error').hidden=false;canvas.hidden=true;return}
         const stars=Array.from({length:105},(_,i)=>({x:((i*173+23)%997)/997,y:((i*311+97)%991)/991,a:.16+(i%7)*.07,r:i%11===0?1.3:.65}));
         const rgba=(hex,alpha)=>{const v=parseInt(hex.slice(1),16);return`rgba(${v>>16&255},${v>>8&255},${v&255},${alpha})`};
+        // Local visual traffic runs continuously; scanner telemetry only updates node health and details.
         function paint(){raf=requestAnimationFrame(paint);const frameTime=performance.now(),delta=lastFrameTime?Math.min((frameTime-lastFrameTime)/1000,.05):1/60;lastFrameTime=frameTime;visualTime+=delta*speed*.01*(reduceMotion ? .35 : 1);const pulseTime=frameTime/1000*(reduceMotion ? .35 : 1);ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);
           for(const star of stars){ctx.globalAlpha=star.a*(.7+Math.sin(visualTime*1.6+star.x*25)*.3);ctx.fillStyle='#c9d6ff';ctx.beginPath();ctx.arc(star.x*width,star.y*height,star.r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;
           const all=[...nodes.values()];glideNodes(all,delta);
@@ -524,6 +525,7 @@
       function dotDraw(pos,col,sizes){if(!pos.length)return;gl.useProgram(dotProgram);gl.uniform2f(gl.getUniformLocation(dotProgram,'resolution'),width,height);gl.uniform1f(gl.getUniformLocation(dotProgram,'ratio'),dpr);attrib(dotProgram,'p',dotPos,new Float32Array(pos),2);attrib(dotProgram,'c',dotColor,new Float32Array(col),4);attrib(dotProgram,'size',dotSize,new Float32Array(sizes),1);gl.drawArrays(gl.POINTS,0,pos.length/2)}
       const stars=Array.from({length:105},(_,i)=>({x:((i*173+23)%997)/997,y:((i*311+97)%991)/991,size:i%11===0?2.1:1.1,a:.18+(i%7)*.06}));
       function color(hex,a){const v=parseInt(hex.slice(1),16);return[(v>>16&255)/255,(v>>8&255)/255,(v&255)/255,a]}
+        // Keep laser packets on this local RAF clock rather than tying them to WebSocket updates.
         function draw(){raf=requestAnimationFrame(draw);const frameTime=performance.now(),delta=lastFrameTime?Math.min((frameTime-lastFrameTime)/1000,.05):1/60;lastFrameTime=frameTime;visualTime+=delta*speed*.01*(reduceMotion ? .35 : 1);const pulseTime=frameTime/1000*(reduceMotion ? .35 : 1);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);
         const lineP=[],lineC=[],dotP=[],dotC=[],dotS=[];for(const star of stars){dotP.push(star.x*width,star.y*height);dotC.push(.72,.79,1,star.a*(.72+Math.sin(visualTime*1.6+star.x*25)*.28));dotS.push(star.size)}
         const arr=[...nodes.values()];glideNodes(arr,delta);

@@ -20,6 +20,7 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { compileDeviceNameMatrix, readDeviceNameMatrix } from './compile-device-matrix.mjs'
+import { compileNetworkTopology } from './compile-network-topology.mjs'
 
 const SRC = '.vite-out/client'
 const DEST = 'dist'
@@ -52,16 +53,19 @@ for (const entry of readdirSync(SRC)) {
 
 const standalonePath = join(DEST, 'standalone.html')
 const matrixPath = join(DEST, 'device-names.json')
-if (!existsSync(standalonePath) || !existsSync(matrixPath)) {
-  console.error('[finalize] standalone.html or device-names.json missing from the static assets.')
+const topologyPath = join(DEST, 'network-topology.json')
+if (!existsSync(standalonePath) || !existsSync(matrixPath) || !existsSync(topologyPath)) {
+  console.error('[finalize] standalone.html, device-names.json, or network-topology.json missing from the static assets.')
   process.exit(1)
 }
 try {
   const matrix = readDeviceNameMatrix(matrixPath)
   const html = compileDeviceNameMatrix(readFileSync(standalonePath, 'utf8'), matrix)
+  const topology = compileNetworkTopology(JSON.parse(readFileSync(topologyPath, 'utf8')), matrix)
   writeFileSync(standalonePath, html)
+  writeFileSync(topologyPath, `${JSON.stringify(topology, null, 2)}\n`)
 } catch (error) {
-  console.error(`[finalize] Could not compile the device-name matrix: ${error.message}`)
+  console.error(`[finalize] Could not compile the static device inventory: ${error.message}`)
   process.exit(1)
 }
 

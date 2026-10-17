@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { compileDeviceNameMatrix, readDeviceNameMatrix } from './compile-device-matrix.mjs'
+import { compileNetworkTopology } from './compile-network-topology.mjs'
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const sourcePath = join(projectRoot, 'public', 'standalone.html')
@@ -24,21 +25,22 @@ if (!existsSync(topologyPath)) {
 }
 
 const matrix = readDeviceNameMatrix(namesPath)
-const topology = JSON.parse(readFileSync(topologyPath, 'utf8'))
-if (!topology || !Array.isArray(topology.nodes) || !Array.isArray(topology.links)) {
-  console.error('[static] Network topology must contain node and link arrays.')
-  process.exit(1)
-}
-const topologyNodeIds = new Set(topology.nodes.map((node) => node?.id).filter((id) => typeof id === 'string'))
-if (!topologyNodeIds.has(topology.rootNodeId) || topologyNodeIds.size !== topology.nodes.length ||
-  topology.links.some((link) => !topologyNodeIds.has(link?.source) || !topologyNodeIds.has(link?.target))) {
-  console.error('[static] Network topology has a missing root, duplicate node ID, or dangling link.')
+let topology
+try {
+  topology = compileNetworkTopology(JSON.parse(readFileSync(topologyPath, 'utf8')), matrix)
+} catch (error) {
+  console.error(`[static] ${error.message}`)
   process.exit(1)
 }
 const sourceHtml = readFileSync(sourcePath, 'utf8')
 const html = compileDeviceNameMatrix(sourceHtml, matrix)
 if (!html.includes('<canvas id="mesh"') || !html.includes("getContext('webgl'")) {
   console.error('[static] Source is missing the WebGL network renderer.')
+  process.exit(1)
+}
+if (!html.includes('requestAnimationFrame(paint)') || !html.includes('requestAnimationFrame(draw)') ||
+  !html.includes('for(let packet=0;packet<4;packet++)')) {
+  console.error('[static] Local requestAnimationFrame laser traffic is missing from a renderer.')
   process.exit(1)
 }
 if (/<script[^>]+src=["']https?:\/\/|<link[^>]+href=["']https?:\/\//i.test(html)) {
