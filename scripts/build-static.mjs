@@ -6,6 +6,7 @@ import { compileDeviceNameMatrix, readDeviceNameMatrix } from './compile-device-
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const sourcePath = join(projectRoot, 'public', 'standalone.html')
 const namesPath = join(projectRoot, 'public', 'device-names.json')
+const topologyPath = join(projectRoot, 'public', 'network-topology.json')
 const distPath = join(projectRoot, 'dist')
 
 if (!existsSync(sourcePath)) {
@@ -17,8 +18,23 @@ if (!existsSync(namesPath)) {
   console.error('[static] Missing public/device-names.json')
   process.exit(1)
 }
+if (!existsSync(topologyPath)) {
+  console.error('[static] Missing public/network-topology.json')
+  process.exit(1)
+}
 
 const matrix = readDeviceNameMatrix(namesPath)
+const topology = JSON.parse(readFileSync(topologyPath, 'utf8'))
+if (!topology || !Array.isArray(topology.nodes) || !Array.isArray(topology.links)) {
+  console.error('[static] Network topology must contain node and link arrays.')
+  process.exit(1)
+}
+const topologyNodeIds = new Set(topology.nodes.map((node) => node?.id).filter((id) => typeof id === 'string'))
+if (!topologyNodeIds.has(topology.rootNodeId) || topologyNodeIds.size !== topology.nodes.length ||
+  topology.links.some((link) => !topologyNodeIds.has(link?.source) || !topologyNodeIds.has(link?.target))) {
+  console.error('[static] Network topology has a missing root, duplicate node ID, or dangling link.')
+  process.exit(1)
+}
 const sourceHtml = readFileSync(sourcePath, 'utf8')
 const html = compileDeviceNameMatrix(sourceHtml, matrix)
 if (!html.includes('<canvas id="mesh"') || !html.includes("getContext('webgl'")) {
@@ -46,4 +62,5 @@ for (const entry of readdirSync(distPath)) {
 writeFileSync(join(distPath, 'index.html'), html)
 writeFileSync(join(distPath, 'standalone.html'), html)
 writeFileSync(join(distPath, 'device-names.json'), `${JSON.stringify(matrix, null, 2)}\n`)
-console.log(`[static] Built standalone page and device dictionary in dist/ (${Buffer.byteLength(html)} bytes)`)
+writeFileSync(join(distPath, 'network-topology.json'), `${JSON.stringify(topology, null, 2)}\n`)
+console.log(`[static] Built standalone page, device dictionary, and network topology in dist/ (${Buffer.byteLength(html)} bytes)`)

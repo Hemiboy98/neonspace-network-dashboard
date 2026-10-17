@@ -46,6 +46,7 @@ Plex artwork URLs are served through the local `/api/plex/artwork` proxy so the 
 
 - `public/standalone.html`: self-contained browser UI.
 - `public/device-names.json`: canonical inventory labels, shipped to nginx and loaded by the monitor.
+- `public/network-topology.json`: canonical physical and Tailscale graph links, node IDs, and layout.
 - `server/monitor.mjs`: ESM monitor, WebSocket stream, and local HTTP API.
 - `docker/nginx.conf`: static hosting and reverse proxy.
 - `scripts/build-static.mjs`: static asset build.

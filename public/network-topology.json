@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "rootNodeId": "host-192-168-4-1",
+  "nodes": [
+    { "id": "host-192-168-4-1", "label": "Gateway eero Router", "kind": "gateway", "ip": "192.168.4.1", "layer": "core", "layout": [0.11, 0.5] },
+    { "id": "main-gigabit-switch", "label": "Main Gigabit Switch", "kind": "switch", "layer": "wired", "layout": [0.38, 0.5] },
+
+    { "id": "host-192-168-4-200", "label": "Dell Inc. Server", "kind": "server", "ip": "192.168.4.200", "layer": "wired", "layout": [0.58, 0.23] },
+    { "id": "host-192-168-4-47", "label": "Proxmox Host Node", "kind": "hypervisor", "ip": "192.168.4.47", "layer": "wired", "layout": [0.58, 0.39] },
+    { "id": "host-192-168-4-48", "label": "Docker Host Engine", "kind": "container-host", "ip": "192.168.4.48", "layer": "wired", "layout": [0.58, 0.55] },
+    { "id": "host-192-168-4-49", "label": "Chronos-05 Plex Vault", "kind": "media-server", "ip": "192.168.4.49", "layer": "wired", "layout": [0.58, 0.71] },
+    { "id": "host-192-168-4-33", "label": "Homarr Cockpit Portal", "kind": "service", "ip": "192.168.4.33", "layer": "wired", "layout": [0.77, 0.23] },
+    { "id": "host-192-168-4-31", "label": "9800x3d Desktop & s25 Ultra", "kind": "desktop", "ip": "192.168.4.31", "layer": "wired", "layout": [0.77, 0.39] },
+    { "id": "host-192-168-4-29", "label": "Wife's iMac", "kind": "desktop", "ip": "192.168.4.29", "layer": "wired", "aliases": ["Zaden-iMac"], "layout": [0.77, 0.55] },
+    { "id": "host-192-168-4-28", "label": "Network Printer (Placeholder)", "kind": "printer", "ip": "192.168.4.28", "layer": "wired", "layout": [0.77, 0.71] },
+
+    { "id": "host-192-168-4-20", "label": "Main Gaming Laptop", "kind": "laptop", "ip": "192.168.4.20", "layer": "wifi", "layout": [0.16, 0.1] },
+    { "id": "host-192-168-4-21", "label": "Kids Room Camera 03", "kind": "camera", "ip": "192.168.4.21", "layer": "wifi", "layout": [0.24, 0.14] },
+    { "id": "host-192-168-4-23", "label": "Kids Room Camera 01", "kind": "camera", "ip": "192.168.4.23", "layer": "wifi", "layout": [0.32, 0.1] },
+    { "id": "host-192-168-4-24", "label": "OnnTV", "kind": "tv", "ip": "192.168.4.24", "layer": "wifi", "layout": [0.16, 0.23] },
+    { "id": "host-192-168-4-26", "label": "Wife's Work Macbook", "kind": "laptop", "ip": "192.168.4.26", "layer": "wifi", "layout": [0.25, 0.24] },
+    { "id": "host-192-168-4-27", "label": "Family Apple iPad", "kind": "tablet", "ip": "192.168.4.27", "layer": "wifi", "layout": [0.34, 0.24] },
+    { "id": "host-192-168-4-30", "label": "Kids Room Camera 04", "kind": "camera", "ip": "192.168.4.30", "layer": "wifi", "layout": [0.16, 0.34] },
+    { "id": "host-192-168-4-32", "label": "Kids Room Camera 02", "kind": "camera", "ip": "192.168.4.32", "layer": "wifi", "layout": [0.25, 0.36] },
+    { "id": "host-192-168-4-34", "label": "LG Smart TV", "kind": "tv", "ip": "192.168.4.34", "layer": "wifi", "layout": [0.34, 0.35] },
+
+    { "id": "wifi-smart-tv", "label": "Smart TV", "kind": "tv", "layer": "wifi", "layout": [0.16, 0.66] },
+    { "id": "wifi-security-cameras", "label": "Security Cameras", "kind": "camera-group", "layer": "wifi", "layout": [0.24, 0.76] },
+    { "id": "mac-48-45-e6-23-78-35", "label": "Legion Go S", "kind": "handheld", "layer": "wifi", "addressType": "mac", "deviceId": "48:45:e6:23:78:35", "layout": [0.15, 0.86] },
+    { "id": "mac-9e-e2-0a-33-77-9d", "label": "macbookair", "kind": "laptop", "layer": "wifi", "addressType": "mac", "deviceId": "9e:e2:0a:33:77:9d", "layout": [0.28, 0.9] },
+    { "id": "mac-8a-be-de-2e-74-a0", "label": "wifes 16 pro max", "kind": "mobile", "layer": "tailscale", "addressType": "mac", "deviceId": "8a:be:de:2e:74:a0", "layout": [0.4, 0.85] }
+  ],
+  "links": [
+    { "source": "host-192-168-4-1", "target": "main-gigabit-switch", "type": "wired", "kind": "physical", "label": "Gateway uplink", "color": "#ff58cf" },
+
+    { "source": "main-gigabit-switch", "target": "host-192-168-4-200", "type": "wired", "kind": "physical", "label": "Gigabit Ethernet", "color": "#4a90e2" },
+    { "source": "main-gigabit-switch", "target": "host-192-168-4-47", "type": "wired", "kind": "physical", "label": "Gigabit Ethernet", "color": "#4a90e2" },
+    { "source": "main-gigabit-switch", "target": "host-192-168-4-48", "type": "wired", "kind": "physical", "label": "Gigabit Ethernet", "color": "#39ff14" },
+    { "source": "main-gigabit-switch", "target": "host-192-168-4-49", "type": "wired", "kind": "physical", "label": "Gigabit Ethernet", "color": "#00ffff" },
+    { "source": "main-gigabit-switch", "target": "host-192-168-4-33", "type": "wired", "kind": "physical", "label": "Gigabit Ethernet", "color": "#4a90e2" },
+    { "source": "main-gigabit-switch", "target": "host-192-168-4-31", "type": "wired", "kind": "physical", "label": "Gigabit Ethernet", "color": "#39ff14" },
+    { "source": "main-gigabit-switch", "target": "host-192-168-4-29", "type": "wired", "kind": "physical", "label": "Gigabit Ethernet", "color": "#4a90e2" },
+    { "source": "main-gigabit-switch", "target": "host-192-168-4-28", "type": "wired", "kind": "physical", "label": "Gigabit Ethernet", "color": "#4a90e2" },
+
+    { "source": "host-192-168-4-1", "target": "host-192-168-4-20", "type": "wireless", "kind": "physical", "label": "Wi-Fi", "color": "#68e8ff" },
+    { "source": "host-192-168-4-1", "target": "host-192-168-4-21", "type": "wireless", "kind": "physical", "label": "Wi-Fi", "color": "#68e8ff" },
+    { "source": "host-192-168-4-1", "target": "host-192-168-4-23", "type": "wireless", "kind": "physical", "label": "Wi-Fi", "color": "#68e8ff" },
+    { "source": "host-192-168-4-1", "target": "host-192-168-4-24", "type": "wireless", "kind": "physical", "label": "Wi-Fi", "color": "#68e8ff" },
+    { "source": "host-192-168-4-1", "target": "host-192-168-4-26", "type": "wireless", "kind": "physical", "label": "Wi-Fi", "color": "#68e8ff" },
+    { "source": "host-192-168-4-1", "target": "host-192-168-4-27", "type": "wireless", "kind": "physical", "label": "Wi-Fi", "color": "#68e8ff" },
+    { "source": "host-192-168-4-1", "target": "host-192-168-4-30", "type": "wireless", "kind": "physical", "label": "Wi-Fi", "color": "#68e8ff" },
+    { "source": "host-192-168-4-1", "target": "host-192-168-4-32", "type": "wireless", "kind": "physical", "label": "Wi-Fi", "color": "#68e8ff" },
+    { "source": "host-192-168-4-1", "target": "host-192-168-4-34", "type": "wireless", "kind": "physical", "label": "Wi-Fi", "color": "#68e8ff" },
+    { "source": "host-192-168-4-1", "target": "wifi-smart-tv", "type": "wireless", "kind": "physical", "label": "Wi-Fi", "color": "#68e8ff" },
+    { "source": "host-192-168-4-1", "target": "wifi-security-cameras", "type": "wireless", "kind": "physical", "label": "Wi-Fi", "color": "#68e8ff" },
+    { "source": "host-192-168-4-1", "target": "mac-48-45-e6-23-78-35", "type": "wireless", "kind": "physical", "label": "Wi-Fi", "color": "#68e8ff" },
+    { "source": "host-192-168-4-1", "target": "mac-9e-e2-0a-33-77-9d", "type": "wireless", "kind": "physical", "label": "Wi-Fi", "color": "#68e8ff" },
+    { "source": "host-192-168-4-1", "target": "mac-8a-be-de-2e-74-a0", "type": "wireless", "kind": "physical", "label": "Wi-Fi", "color": "#68e8ff" },
+
+    { "source": "host-192-168-4-31", "target": "host-192-168-4-47", "type": "overlay", "kind": "tailscale", "label": "Tailscale tunnel", "color": "#b86ee8" },
+    { "source": "mac-8a-be-de-2e-74-a0", "target": "host-192-168-4-47", "type": "overlay", "kind": "tailscale", "label": "Tailscale tunnel", "color": "#b86ee8" }
+  ]
+}
