@@ -317,9 +317,35 @@
     .control-dock .speed-control{flex:0 0 auto;width:max-content}
     .control-dock .beam-palette{flex:0 0 252px}
     .workspace{position:relative;display:block;flex:0 0 88px;width:100%;max-width:none;height:88px;min-height:88px;margin:0;padding:0}
-    .workspace>.field{position:relative;width:100%;height:88px;min-height:88px;margin:0;border-right:0;border-left:0;border-radius:0}
-    .inspector-row{position:relative;display:block;flex:0 0 auto;width:100%;height:auto;min-height:320px;max-height:none;margin:0;overflow:hidden}
-    .workspace>.field #mesh{inset:0;display:block;width:100%;height:100%;min-height:88px}
+    .workspace>.inspector-strip{position:relative;display:flex;flex:0 0 88px;flex-direction:column;width:100%;height:88px!important;min-height:88px!important;max-height:88px!important;margin:0;overflow:hidden}
+    .workspace>.inspector-strip>.inspector-head{flex:0 0 27px;min-height:27px;padding:4px 11px;font-size:8px}
+    .workspace>.inspector-strip>.inspector-body{display:flex;flex:1 1 auto;align-items:center;gap:8px;min-width:0;min-height:0;padding:4px 10px;overflow-x:auto;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+    .inspector-strip .endpoint{flex:0 0 180px;align-items:center;gap:7px}
+    .inspector-strip .device-icon{width:28px;height:28px;border-radius:8px;font-size:13px}
+    .inspector-strip .endpoint h2{overflow:hidden;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
+    .inspector-strip .endpoint p{white-space:nowrap}
+    .inspector-strip .connection-editor{display:flex;flex:0 0 auto;align-items:center;gap:7px;min-width:max-content;margin:0;padding:4px 6px}
+    .inspector-strip .connection-heading{gap:5px;white-space:nowrap}
+    .inspector-strip .connection-heading small,.inspector-strip .connection-note{display:none}
+    .inspector-strip .connection-segment{display:flex;gap:4px}
+    .inspector-strip .connection-segment button{padding:5px 7px;white-space:nowrap}
+    .inspector-strip .connection-route{display:flex;align-items:center;gap:5px;white-space:nowrap}
+    .inspector-strip .connection-route select{width:auto;padding:4px 6px}
+    .inspector-strip .status-row,.inspector-strip .link-row{flex:0 0 150px;gap:6px;margin:0;padding:6px;font-size:7px;white-space:nowrap}
+    .inspector-strip .telemetry{display:flex;flex:0 0 auto;gap:5px;margin:0}
+    .inspector-strip .telemetry-card{flex:0 0 96px;padding:5px 7px}
+    .inspector-strip .telemetry-label{font-size:7px;white-space:nowrap}
+    .inspector-strip .telemetry-value{margin-top:3px;font-size:9px;white-space:nowrap}
+    .inspector-strip .stream-title{flex:0 0 130px;gap:6px;margin:0;font-size:7px;white-space:nowrap}
+    .inspector-strip .logs{flex:0 0 220px}
+    .inspector-strip .log{grid-template-columns:34px 34px minmax(0,1fr);gap:4px;padding:4px 6px;font-size:8px}
+    .inspector-strip>.inspector-foot{flex:0 0 18px;min-height:18px;padding:3px 12px;font-size:6px;white-space:nowrap}
+    .inspector-strip .empty{display:block;flex:0 0 auto;min-height:0;max-width:240px;padding:0 6px;white-space:nowrap}
+    .inspector-strip .empty strong{font-size:10px}
+    .inspector-strip .empty p{max-width:220px;margin:2px 0 0;font-size:8px}
+    .map-viewport{position:relative;display:block;flex:0 0 1000px;width:100%;height:1000px!important;min-height:1000px!important;max-height:1000px!important;margin:0;overflow:hidden}
+    .map-viewport>.field{position:relative;width:100%;height:1000px!important;min-height:1000px!important;margin:0;border-right:0;border-left:0;border-radius:0}
+    .map-viewport>.field #mesh{inset:0;display:block;width:100%;height:100%;min-height:1000px}
     .live-fleet{margin-top:0}
     .ships{clear:both;margin-top:0;padding-top:20px}
     .node-label[data-celestial]{border-color:color-mix(in srgb,var(--celestial-color) 32%,transparent);color:var(--celestial-color);text-shadow:0 0 8px color-mix(in srgb,var(--celestial-color) 45%,transparent)}
@@ -341,7 +367,7 @@
     .celestial-body[data-comet="true"]::after{position:absolute;right:76%;top:42%;width:100%;height:18%;content:"";background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--body-glow) 52%,transparent));filter:blur(2px);transform:rotate(-24deg);transform-origin:right center}
     .celestial-health{position:absolute;z-index:3;top:-1px;right:-1px;width:6px;height:6px;border:1px solid #090910;border-radius:50%;background:var(--health-color,#a59bb8);box-shadow:0 0 7px var(--health-color,#a59bb8)}
     .labels{z-index:4}
-    @media(max-width:760px){.observatory-shell{height:auto;min-height:0}.topology-stack{gap:12px}.control-dock{width:100%;max-width:100%;padding-inline:14px;align-items:center;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain}.workspace{flex:0 0 88px;height:88px;min-height:88px}.workspace>.field{height:88px;min-height:88px}.inspector-row{min-height:280px}.live-fleet{padding:14px}}
+    @media(max-width:760px){.observatory-shell{height:auto;min-height:0}.topology-stack{gap:12px}.control-dock{width:100%;max-width:100%;padding-inline:14px;align-items:center;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain}.workspace{flex:0 0 88px;height:88px;min-height:88px}.workspace>.inspector-strip{flex-basis:88px;height:88px!important;min-height:88px!important;max-height:88px!important}.map-viewport{flex-basis:1000px;height:1000px!important;min-height:1000px!important;max-height:1000px!important}.map-viewport>.field{height:1000px!important;min-height:1000px!important}.live-fleet{padding:14px}}
     @media(max-width:430px){.control-dock{gap:6px}.control-dock>.field-hud{font-size:7px;padding:6px 7px}.control-dock>.field-controls{gap:6px}.control-dock .beam-palette{width:222px;flex-basis:222px}}
   </style>
 </head>
@@ -357,8 +383,11 @@
       <div><div class="eyebrow mono">Live topology</div><h1 id="page-title">Your network, <span style="color:#8c899d">in orbit.</span></h1><p class="subcopy">A live field view of monitored LAN endpoints and scan-discovered terminals.</p></div>
       <div class="metrics" aria-label="Live network summary"><div class="metric"><div class="metric-label mono">KNOWN HOSTS</div><div id="metric-nodes" class="metric-value">—</div><div id="metric-host-detail" class="metric-detail">awaiting live monitor inventory</div></div><div class="metric"><div class="metric-label mono">MEDIAN PING</div><div id="metric-latency" class="metric-value">— <small>ms</small></div><div id="metric-latency-detail" class="metric-detail">waiting for ICMP replies</div></div><div class="metric"><div class="metric-label mono">LAST SUBNET SWEEP</div><div id="metric-discovery" class="metric-value">—</div><div id="metric-discovery-detail" class="metric-detail">scan every 10 seconds</div></div></div>
     </section>
+    <div class="workspace" aria-label="Live endpoint inspector">
+      <aside id="inspector" class="inspector inspector-strip" aria-live="polite"></aside>
+    </div>
     <div class="topology-stack">
-    <section class="workspace" aria-label="Network observatory">
+    <section class="inspector-row map-viewport" aria-label="Network topology orbit map">
       <div class="field" id="field" aria-label="Interactive network topology">
         <canvas id="mesh" aria-label="Interactive WebGL network graph. Drag a device to move it and select it to inspect live ICMP reachability and latency." role="img"></canvas>
         <svg id="orbit-layer" class="orbit-layer" aria-hidden="true" focusable="false"></svg>
@@ -375,7 +404,6 @@
       <div class="field-controls"><label class="speed-control mono" for="speed"><span>BEAM</span><strong id="speed-value">32.00×</strong><input id="speed" type="range" min="4" max="48" step="1" value="32" aria-label="Beam animation speed"></label><div class="beam-palette" aria-label="Gateway and switch beam colors"><div class="beam-palette-title mono">BEAM COLORWAYS</div><div class="beam-color-row" id="gateway-beam-row"><span class="beam-color-name mono">GATEWAY</span><input id="beam-gateway-hue" type="range" min="0" max="359" step="1" value="320" aria-label="Gateway beam hue"><output id="beam-gateway-value" for="beam-gateway-hue">#ff58cf</output><label class="rainbow-toggle mono"><input id="beam-gateway-rainbow" type="checkbox"><span>RAINBOW</span></label></div><div class="beam-color-row" id="switch-beam-row"><span class="beam-color-name mono">GIGABIT</span><input id="beam-switch-hue" type="range" min="0" max="359" step="1" value="210" aria-label="Gigabit switch beam hue"><output id="beam-switch-value" for="beam-switch-hue">#3385e6</output><label class="rainbow-toggle mono"><input id="beam-switch-rainbow" type="checkbox"><span>RAINBOW</span></label></div></div><span id="sample-tag" class="sample-tag mono">● CONNECTING</span></div>
     </section>
     </div>
-    <aside id="inspector" class="inspector inspector-row" aria-live="polite"></aside>
     </div>
     <section id="fleet-section" class="live-fleet" aria-labelledby="fleet-title">
       <div class="fleet-header"><div><p class="fleet-eyebrow mono">LAN MONITOR / 192.168.4.0/24</p><h2 id="fleet-title">Live terminal fleet</h2><p id="monitor-copy" class="fleet-copy">Waiting for the container's network monitor…</p></div><div id="monitor-state" class="monitor-state connecting" role="status"><span class="state-dot"></span><span>CONNECTING</span></div></div>
