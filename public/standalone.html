@@ -314,10 +314,10 @@
     .control-dock>.field-controls{position:static;display:flex;flex:0 0 auto;flex-direction:row;align-items:center;gap:8px;min-width:0}
     .control-dock .speed-control{flex:0 0 auto;width:max-content}
     .control-dock .beam-palette{flex:0 0 252px}
-    .workspace{display:grid;flex:1 1 auto;min-height:550px;align-items:stretch;grid-template-rows:minmax(550px,1fr)}
-    .workspace>.field{height:100%;min-height:550px}
-    .workspace>.inspector{height:100%;min-height:0}
-    .workspace>.field #mesh{width:100%;height:100%;min-height:550px}
+    .workspace{position:relative;left:50%;display:block;flex:0 0 800px;width:100vw;max-width:none;height:800px;min-height:800px;margin-left:-50vw;margin-right:0;padding:0}
+    .workspace>.field{width:100%;height:100%;min-height:800px;margin:0;border-right:0;border-left:0;border-radius:0}
+    .workspace>.inspector{position:absolute;top:18px;right:18px;bottom:18px;z-index:6;width:min(340px,calc(100vw - 36px));height:auto;min-height:0;max-height:calc(100% - 36px)}
+    .workspace>.field #mesh{inset:0;display:block;width:100%;height:100%;min-height:800px}
     .node-label[data-celestial]{border-color:color-mix(in srgb,var(--celestial-color) 32%,transparent);color:var(--celestial-color);text-shadow:0 0 8px color-mix(in srgb,var(--celestial-color) 45%,transparent)}
     .orbit-layer{position:absolute;inset:0;z-index:1;width:100%;height:100%;overflow:visible;pointer-events:none}
     .orbit-track{fill:none;stroke:color-mix(in srgb,var(--orbit-color,#a39cb8) 27%,transparent);stroke-width:1;stroke-dasharray:2 7;vector-effect:non-scaling-stroke}
@@ -337,7 +337,7 @@
     .celestial-body[data-comet="true"]::after{position:absolute;right:76%;top:42%;width:100%;height:18%;content:"";background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--body-glow) 52%,transparent));filter:blur(2px);transform:rotate(-24deg);transform-origin:right center}
     .celestial-health{position:absolute;z-index:3;top:-1px;right:-1px;width:6px;height:6px;border:1px solid #090910;border-radius:50%;background:var(--health-color,#a59bb8);box-shadow:0 0 7px var(--health-color,#a59bb8)}
     .labels{z-index:4}
-    @media(max-width:760px){.observatory-shell{height:auto;min-height:760px}.control-dock{width:100%;max-width:100%;align-items:center;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain}.workspace{flex:0 0 auto;min-height:550px;grid-template-columns:1fr;grid-template-rows:auto}.workspace>.field{height:clamp(550px,68dvh,900px);min-height:550px}.workspace>.inspector{height:auto;min-height:0}}
+    @media(max-width:760px){.observatory-shell{height:auto;min-height:760px}.control-dock{width:100%;max-width:100%;align-items:center;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain}.workspace{flex:0 0 800px;height:800px;min-height:800px}.workspace>.field{height:800px;min-height:800px}.workspace>.inspector{top:12px;right:12px;bottom:auto;width:min(320px,calc(100vw - 24px));height:min(300px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto}}
     @media(max-width:430px){.control-dock{gap:6px}.control-dock>.field-hud{font-size:7px;padding:6px 7px}.control-dock>.field-controls{gap:6px}.control-dock .beam-palette{width:222px;flex-basis:222px}}
   </style>
 </head>
